@@ -1,0 +1,13 @@
+export("PRIMsrc.news", 
+       "sbh",
+       "plot_profile",
+       "plot_scatter",
+       "plot_boxtraj",
+       "plot_boxtrace",
+       "plot_boxkm")
+
+import("parallel", "survival", "Hmisc", "glmnet", "MASS")
+import("graphics", "grDevices", "stats")
+
+S3method("summary","PRSP")
+S3method("predict","PRSP")
