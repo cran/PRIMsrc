@@ -16,29 +16,35 @@
 }
 
 \details{
-    The current version is a development release that only implements the case of a survival response.
-    At this point, survival bump hunting is also restricted to a directed peeling search of the first box covered by the recursive coverage (outer) loop of our 
-    Patient Recursive Survival Peeling (PRSP) algorithm. New features will be added soon as they are available. 
-    The main function relies on an internal variable pre-selection procedure before the PRSP algorithm is run. 
-    At this point, this is done either by regular Cox-regression or cross-validated regularized Cox-regression.
+    The current version is a development release that only implements the case of a survival response. At this point, 
+    survival bump hunting is also restricted to a directed peeling search of the first box covered by the recursive coverage (outer) loop of our 
+    Patient Recursive Survival Peeling (PRSP) algorithm. New features will be added soon.
     
-    The following describes only the end-user functions that are needed to run a complete procedure.
-    The other internal subroutines are briefly documented in the manual, but are not to be called by the end-user at any time. 
+    The main function relies on an optional variable pre-selection procedure that is run before the PRSP algorithm. 
+    At this point, this is done by a cross-validated penalization of the partial likelihood using the R package \pkg{glmnet}. 
+    
+    The following describes the end-user functions that are needed to run a complete procedure.
+    The other internal subroutines are not documented in the manual and are not to be called by the end-user at any time. 
     For computational efficiency, some end-user functions offer a parallelization option that is done by passing a few parameters 
     needed to configure a cluster. This is indicated by an asterisk (* = optionally involving cluster usage). 
     The R functions are categorized as follows:
 
     \enumerate{
 
-      \item{END-USER FUNCTIONS FOR NEWS, SUMMARY AND PREDICTION} \cr
+      \item{END-USER FUNCTION FOR PACKAGE NEWS} \cr
       \code{\link[PRIMsrc]{PRIMsrc.news}}
       \bold{Display the \pkg{PRIMsrc} Package News}\cr
             Function to display the log file \code{NEWS} of updates of the \pkg{PRIMsrc} package.\cr
             
+      \item{END-USER S3 GENERIC FUNCTIONS FOR SUMMARY, DISPLAY AND PREDICTION} \cr
       \code{\link[PRIMsrc]{summary}}
       \bold{Summary Function}\cr
-            S3 generic summary function to display the main parameters of a \code{PRSP} object.\cr
+            S3 generic summary function to summerize the main parameters used to generate the \code{PRSP} object.\cr
             
+      \code{\link[PRIMsrc]{print}}
+      \bold{Print Function}\cr
+            S3 generic print function to display the cross-validated fitted values of the \code{PRSP} object.\cr
+
       \code{\link[PRIMsrc]{predict}}
       \bold{Predict Function}\cr
             S3 generic predict function to predict the box membership and box vertices 
@@ -122,6 +128,15 @@
             in this dataset example for simplification. Variables included history of Injection Drug Use ("IDU") at enrollment,
             African American ethnicity ("Race"), age ("Age"), and baseline CD4 count ("CD4"). The question in this dataset example 
             was whether it is possible to achieve a prognostication of patients for AIDS and HAART.\cr
+
+      \code{\link[PRIMsrc]{Real.2}}
+      \bold{Genomic Dataset} \cr
+            Publicly available lung cancer data from the Chemores Cohort Study. This was an integrated study of mRNA, miRNA 
+            and clinical variables to characterize the molecular distinctions between squamous cell carcinoma (SCC) 
+            and adenocarcinoma (AC) in Non Small Cell Lung Cancer (NSCLC). Tissue samples were analysed from a cohort of 123 patients 
+            who underwent complete surgical resection at the Institut Mutualiste Montsouris (Paris, France) between 30 January 2002 and 26 June 2006.
+            In this genomic dataset, only the expression levels of Agilent miRNA probes (\eqn{p=939}) were included from the \eqn{n=123} samples of the Chemores cohort. 
+            It represents a situation where the number of covariates dominates the number of complete observations, or \eqn{p >> n} case. \cr
     }
     Known Bugs/Problems : None at this time.
 }

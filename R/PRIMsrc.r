@@ -12,7 +12,7 @@
 ################
 #                   sbh(dataset,
 #                       B=10, K=5, A=1000,
-#                       cpv=FALSE,
+#                       vs=TRUE, cpv=FALSE,
 #                       cvtype=c("combined", "averaged", "none"),
 #                       cvcriterion=c("lrt", "cer", "lhr"),
 #                       arg="beta=0.05,alpha=0.1,minn=10,L=NULL,peelcriterion=\"lr\"",
@@ -35,7 +35,7 @@
 
 sbh <- function(dataset,
                 B=10, K=5, A=1000,
-                cpv=FALSE,
+                vs=TRUE, cpv=FALSE,
                 cvtype=c("combined", "averaged", "none"),
                 cvcriterion=c("lrt", "cer", "lhr"),
                 arg="beta=0.05,alpha=0.1,minn=10,L=NULL,peelcriterion=\"lr\"",
@@ -81,7 +81,7 @@ sbh <- function(dataset,
             cat("Requested replicated ", K, "-fold cross-validation with ", B, " replications \n", sep="")
         }
     } else {
-        cat("Requested single ", K, "-fold cross-validation with no replications \n", sep="")
+        cat("Requested single ", K, "-fold cross-validation without replications \n", sep="")
     }
   } else {
     cvcriterion <- "none"
@@ -92,84 +92,30 @@ sbh <- function(dataset,
     cat("No cross-validation requested. No replication will be performed. No need of parallelization. \n")
   }
   cat("Cross-validation technique: ", cvtype, "\n")
-  cat("Cross-validation criterion: ", cvcriterion, "\n")
+  cat("Cross-validation criterion: ", disp(criterion=cvcriterion), "\n")
+  cat("Variable pre-selection:", vs, "\n")
   cat("Computation of permutation p-values:", cpv, "\n")
-  cat("Peeling criterion: ", peelcriterion, "\n")
+  cat("Peeling criterion: ", disp(criterion=peelcriterion), "\n")
   cat("Parallelization:", parallel, "\n")
   cat("\n")
 
-  # Pre-selection of covariates
-  if (p > n) {
-    cat("Covariate selection by Elasticnet Regularized Cox-Regression ... \n")
-    if (is.null(seed)) {
-        seed <- floor(runif(n=1, min=0, max=1) * 10^(min(digits,9)))
-    } else {
-        set.seed(seed)
-    }
-    nfolds <- max(3,K)
-    folds <- cv.folds(n=n, K=nfolds, seed=seed)
-    foldid <- as.numeric(folds$which[folds$permkey])
-    enalpha <- seq(from=0, to=1, length.out=10)
-    lenalpha <- length(enalpha)
-    enlambda <- vector(mode="list", length=lenalpha)
-    cv.errmu <- vector(mode="list", length=lenalpha)
-    cv.errsd <- vector(mode="list", length=lenalpha)
-    for (i in 1:lenalpha) {
-        cv.fit <- cv.glmnet(x=x, y=Surv(times, status), alpha=enalpha[i], nfolds=nfolds, foldid=foldid, family="cox", maxit=1e5)
-        cv.errmu[[i]] <- cv.fit$cvm
-        cv.errsd[[i]] <- cv.fit$cvsd
-        enlambda[[i]] <- cv.fit$lambda
-    }
-    cv.errmu <- list2mat(list=cv.errmu, coltrunc="max", fill=NA)
-    cv.errsd <- list2mat(list=cv.errsd, coltrunc="max", fill=NA)
-    w <- as.numeric(which(x=(cv.errmu == as.numeric(cv.errmu)[which.min(cv.errmu)]), arr.ind=TRUE, useNames=FALSE))
-    ww <- as.matrix(which(x=cv.errmu[w[1],w[2]] + cv.errsd[w[1],w[2]] <= cv.errmu - cv.errsd, arr.ind=TRUE, useNames=TRUE))
-    wm <- ww - rep.mat(t(w), 2, nrow(ww))
-    wm <- w + wm[which.min(apply(abs(wm), 1, sum)),]        #Nearest neighbor to minimizer index
-    if (is.empty(wm)) {
-        seed <- NULL
-        selected <- NULL
-        success <- FALSE
-    } else {
-        enlambda.min <- enlambda[[wm[1]]][wm[2]]
-        enalpha.min <- enalpha[wm[1]]
-        fit <- glmnet(x=x, y=Surv(times, status), alpha=enalpha.min, family="cox", maxit=1e5)
-        cv.coef <- as.numeric(coef(fit, s=enlambda.min))
-        selected <- which(!(is.na(cv.coef)) & (cv.coef != 0))
-        names(selected) <- colnames(x)[selected]
-        cv.coef <- cv.coef[selected]
-        m <- pmatch(x=1:p, table=selected, nomatch=NA, duplicates.ok=FALSE)
-        w <- which(!is.na(m))
-        sel <- m[w]
-        names(sel) <- names(selected)[sel]
-        success <- TRUE
-    }
+  # Optional pre-selection of covariates
+  if (vs) {
+    cat("Pre-selection of covariates and determination of directions of peeling... \n")
   } else {
-    cat("Covariate selection by regular Cox-Regression ... \n")
-    fit <- coxph(Surv(times, status) ~ x, eps=0.01, singular.ok=T, iter.max=1)
-    cv.coef <- coef(fit)
-    selected <- which(!(is.na(cv.coef)) & (cv.coef != 0))
-    if (is.empty(selected)) {
-      selected <- NULL
-      success <- FALSE
-    } else {
-      names(selected) <- colnames(x)[selected]
-      cv.coef <- cv.coef[selected]
-      m <- pmatch(x=1:p, table=selected, nomatch=NA, duplicates.ok=FALSE)
-      w <- which(!is.na(m))
-      sel <- m[w]
-      names(sel) <- names(selected)[sel]
-      success <- TRUE
-    }
+    cat("Determination of directions of peeling... \n")
   }
+  cv.presel.obj <- cv.presel(x=x, times=times, status=status, vs=vs, n=n, p=p, K=K, seed=seed)
+  success <- cv.presel.obj$success
 
   # Survival Bump Hunting Modeling
   if (!success) {
 
-    # Selected and used covariates
+    # Pre-selected covariates
     cat("Failed to pre-select any informative covariate. Exiting...\n", sep="")
     bool.plot <- FALSE
     varsign <- NULL
+    selected <- NULL
     used <- NULL
     # Cross-validated minimum length from all replicates
     CV.maxsteps <- NULL
@@ -190,17 +136,27 @@ sbh <- function(dataset,
 
   } else {
 
-    # Selected covariates
-    x <- x[, selected, drop=FALSE]
-    p <- length(selected)
-    cat("Successfully pre-selected ", p, " covariates:\n", sep="")
-    selected <- sel
+    # Pre-selected covariates
+    indsel <- cv.presel.obj$indsel
+    selected <- cv.presel.obj$selected
+    x <- x[, indsel, drop=FALSE]
+    p <- length(indsel)
+    if (vs) {
+        cat("Successfully pre-selected ", p, " covariates:\n", sep="")
+    } else {
+        cat("All ", p, " covariates were selected:\n", sep="")
+    }
     print(selected)
 
-    # Directions of directed peeling
-    varsign <- sign(cv.coef)
-    names(varsign) <- colnames(x)
-
+    # Directions of directed peeling of pre-selected covariates
+    varsign <- cv.presel.obj$varsign
+    if (vs) {
+        cat("Directions of peeling of pre-selected covariates:\n", sep="")
+    } else {
+        cat("Directions of peeling of all covariates:\n", sep="")
+    }
+    print(varsign)
+    
     # Initial box boundaries
     initcutpts <- numeric(p)
     for(j in 1:p){
@@ -458,7 +414,7 @@ sbh <- function(dataset,
 
         # Vector of p-values for each step
         if (cpv) {
-            cat("Computation of cross-validated LRT p-values at all steps ... \n")
+            cat("Computation of cross-validated permutation p-values for each step ... \n")
             arg <- paste("beta=", beta, ",alpha=", alpha, ",minn=", minn, ",L=", CV.nsteps-1, ",peelcriterion=\"", peelcriterion, "\"", sep="")
             CV.pval <- cv.pval(x=x, times=times, status=status,
                                cvtype=cvtype,
@@ -483,14 +439,22 @@ sbh <- function(dataset,
 
   # Returning the final 'PRSP' object
   return(structure(list("x"=x, "times"=times, "status"=status,
-                        "B"=B, "K"=K, "A"=A, "cpv"=cpv, "arg"=arg,
+                        "B"=B, "K"=K, "A"=A, "vs"=vs, "cpv"=cpv, "arg"=arg,
                         "cvtype"=cvtype, "cvcriterion"=cvcriterion,
                         "varsign"=varsign, "selected"=selected, "used"=used,
                         "probval"=probval, "timeval"=timeval,
                         "cvfit"=CV.fit,
                         "cvprofiles"=CV.profiles,
                         "cvmeanprofiles"=CV.mean.profiles,
-                        "plot"=bool.plot, "seed"=seed),
+                        "plot"=bool.plot, 
+                        "config"=list("parallel"=parallel, 
+                                      "names"=conf$names, 
+                                      "cpus"=conf$cpus,
+                                      "type"=conf$type,
+                                      "homo"=conf$homo,
+                                      "verbose"=conf$verbose,
+                                      "outfile"=conf$outfile),
+                        "seed"=seed),
                    class = "PRSP"))
 }
 ##########################################################################################################################################
@@ -554,23 +518,127 @@ PRIMsrc.news <- function(...) {
 summary.PRSP <- function(object, ...) {
 
   if (!inherits(object, 'PRSP'))
-        stop("Primary argument much be a PRSP object")
+        stop("Primary argument much be an object of class 'PRSP' \n")
+
+  alpha <- NULL
+  beta <- NULL
+  minn <- NULL
+  L <- NULL
+  peelcriterion <- NULL
+  eval(parse( text=unlist(strsplit(x=object$arg, split=",")) ))
+
+  cat("S3-class object: `", attr(x=object, "class"), "` \n\n")
 
   if (object$cvtype != "none") {
     if (object$B > 1) {
-      cat("PRSP object with replicated ", object$K, "-fold cross-validation with ", object$B, " replications \n", sep="")
+        if (object$config$parallel) {
+            cat("Replicated ", object$K, "-fold cross-validation with ", object$config$cpus*ceiling(object$B/object$config$cpus), " replications \n\n", sep="")
+        } else {
+            cat("Replicated ", object$K, "-fold cross-validation with ", object$B, " replications \n\n", sep="")
+        }
     } else {
-      cat("PRSP object with replicated ", object$K, "-fold cross-validation without replications \n", sep="")
+        cat("Single ", object$K, "-fold cross-validation without replications \n\n", sep="")
     }
-    cat("Cross-validation technique: ", object$cvtype, "\n")
-    cat("Cross-validation criterion: ", object$cvcriterion, "\n")
-    cat("Cross-validated p-values:", object$cpv, "\n")
   } else {
-    cat("PRSP object without cross-validation \n", sep="")
-    cat("Cross-validation technique: ", object$cvtype, "\n")
-    cat("Cross-validation criterion: ", object$cvcriterion, "\n")
-    cat("Cross-validated p-values:", object$cpv, "\n")
+    cat("'PRSP' object without cross-validation and replications\n\n", sep="")
   }
+  cat("Variable pre-selection:", object$vs, "\n")
+  cat("PRSP parameters:\n")
+  cat("\t Peeling criterion: ", disp(criterion=peelcriterion), "\n")
+  cat("\t Peeling percentile: ", alpha*100, "%\n")
+  cat("\t Minimal box support: ", beta*100, "%\n")
+  cat("\t Minimal box sample size: ", minn, "\n")
+  cat("\t Peeling steps: ", L, "\n")
+  cat("Cross-validation technique: ", object$cvtype, "\n")
+  cat("Cross-validation criterion: ", disp(criterion=object$cvcriterion), "\n")
+  cat("Computation of permutation p-values:", object$cpv, "\n")
+  cat("Configuration of parallelization : \n")
+  print(object$config)
+  cat("\n")
+  
+  invisible()
+}
+##########################################################################################################################################
+
+
+
+
+##########################################################################################################################################
+################
+#Usage         :
+################
+#                   print(x, digits=3, ...)
+#
+################
+# Description   :
+################
+#
+################
+# Arguments     :
+################
+#
+################
+# Values        :
+################
+#
+##########################################################################################################################################
+
+print.PRSP <- function(x, digits=3, ...) {
+
+  if (!inherits(x, 'PRSP'))
+        stop("Primary argument much be an object of class 'PRSP' \n")
+
+  obj <- x
+  cat("Selected covariates:\n")
+  print(obj$selected)
+  cat("\n")
+  
+  cat("Used covariates:\n")
+  print(obj$used)
+  cat("\n")
+
+  cat("Maximum number of peeling steps:\n")
+  print(obj$cvfit$cv.maxsteps)
+  cat("\n")
+  
+  out <- obj$cvfit$cv.nsteps-1
+  names(out) <- NULL
+  cat("Optimum number of peeling steps (not counting step #0):\n")
+  print(out)
+  cat("\n")
+  
+  cat("Traces of covariate usage for all replications (columns) for all steps (rows):\n")
+  print(obj$cvfit$cv.trace$dist)
+  cat("\n")
+  
+  cat("Modal trace values of covariate usage at each peeling step:\n")
+  print(obj$cvfit$cv.trace$mode)
+  cat("\n")
+  
+  cat("Cross-validated permutation p-values at each peeling step:\n")
+  print(format(obj$cvfit$cv.pval, digits=digits), quote = FALSE)
+  cat("\n")
+
+  used <- obj$used
+  cat("Decision rules on the covariates (columns) for all peeling steps (rows):\n")
+  print(obj$cvfit$cv.rules$frame[,used,drop=FALSE], quote = FALSE)
+  cat("\n")
+  
+  out <- format(obj$cvfit$cv.stats$mean, digits=digits)
+  colnames(out) <- c("Support", "LHR", "LRT", "CER", "EFT", "EFP", "MEFT", "MEFP")
+  cat("Box endpoint quantities of interest (columns) for all peeling steps (rows):\n")
+  print(out)
+  cat("\n")
+  
+  cat("Box support (sample) size at each peeling step:\n")
+  print(round(nrow(obj$x)*obj$cvfit$cv.stats$mean$cv.support,0))
+  cat("\n")
+  
+  cat("Individual observation box membership indicator (columns) for all peeling steps (rows):\n")
+  print(obj$cvfit$cv.boxind)
+  cat("\n")
+  
+  invisible()
 }
 ##########################################################################################################################################
 
@@ -600,7 +668,7 @@ summary.PRSP <- function(object, ...) {
 predict.PRSP <- function (object, newdata, steps, na.action = na.omit, ...) {
 
   if (!inherits(object, 'PRSP'))
-        stop("Primary argument much be a PRSP object")
+        stop("Primary argument much be an object of class 'PRSP' \n")
 
   X <- as.matrix(newdata)
   X.names <- colnames(X)
@@ -656,7 +724,7 @@ predict.PRSP <- function (object, newdata, steps, na.action = na.omit, ...) {
 ################
 # Usage         :
 ################
-#                    plot_profile(x,
+#                    plot_profile(object,
 #                                 main=NULL,
 #                                 xlab="Peeling Steps", ylab="Mean Profiles",
 #                                 add.sd=TRUE, add.legend=TRUE, add.profiles=TRUE,
@@ -678,7 +746,7 @@ predict.PRSP <- function (object, newdata, steps, na.action = na.omit, ...) {
 #
 ##########################################################################################################################################
 
-plot_profile <- function(x,
+plot_profile <- function(object,
                          main=NULL,
                          xlab="Peeling Steps", ylab="Mean Profiles",
                          add.sd=TRUE, add.legend=TRUE, add.profiles=TRUE,
@@ -686,11 +754,11 @@ plot_profile <- function(x,
                          device=NULL, file="Profile Plot", path=getwd(),
                          horizontal=FALSE, width=8.5, height=5.0, ...) {
 
-  if (!inherits(x, 'PRSP'))
-        stop("Primary argument much be a PRSP object")
+  if (!inherits(object, 'PRSP'))
+        stop("Primary argument much be an object of class 'PRSP' \n")
 
-  if (x$plot) {
-    if (is.null(x$cvcriterion)) {
+  if (object$plot) {
+    if (is.null(object$cvcriterion)) {
       cat("No CV here, so no cross-validated tuning profile to plot!\n")
     } else {
 
@@ -747,7 +815,7 @@ plot_profile <- function(x,
 
       if (is.null(device)) {
         dev.new(width=width, height=height, title="Profile Plot", noRStudioGD = TRUE)
-        profileplot(object=x, main=main, xlab=xlab, ylab=ylab,
+        profileplot(object=object, main=main, xlab=xlab, ylab=ylab,
                     add.sd=add.sd, add.legend=add.legend, add.profiles=add.profiles,
                     pch=pch, col=col, lty=lty, lwd=lwd, cex=cex)
       } else if (device == "PS") {
@@ -757,7 +825,7 @@ plot_profile <- function(x,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         postscript(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, horizontal=horizontal)
-        profileplot(object=x, main=main, xlab=xlab, ylab=ylab,
+        profileplot(object=object, main=main, xlab=xlab, ylab=ylab,
                     add.sd=add.sd, add.legend=add.legend, add.profiles=add.profiles,
                     pch=pch, col=col, lty=lty, lwd=lwd, cex=cex)
         dev.off()
@@ -768,7 +836,7 @@ plot_profile <- function(x,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         pdf(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, paper=ifelse(test=horizontal, yes="USr", no="US"))
-        profileplot(object=x, main=main, xlab=xlab, ylab=ylab,
+        profileplot(object=object, main=main, xlab=xlab, ylab=ylab,
                     add.sd=add.sd, add.legend=add.legend, add.profiles=add.profiles,
                     pch=pch, col=col, lty=lty, lwd=lwd, cex=cex)
         dev.off()
@@ -792,10 +860,10 @@ plot_profile <- function(x,
 ################
 # Usage         :
 ################
-#                    plot_scatter(x,
+#                    plot_scatter(object,
 #                                 main=NULL,
 #                                 proj=c(1,2), splom=TRUE, boxes=FALSE,
-#                                 steps=x$cvfit$cv.nsteps,
+#                                 steps=object$cvfit$cv.nsteps,
 #                                 pch=16, cex=0.5, col=, col=2:(length(steps)+1),
 #                                 col.box=2:(length(steps)+1), lty.box=rep(2,length(steps)), lwd.box=rep(1,length(steps)),
 #                                 add.legend=TRUE,
@@ -816,20 +884,20 @@ plot_profile <- function(x,
 #
 ##########################################################################################################################################
 
-plot_scatter <- function(x,
+plot_scatter <- function(object,
                          main=NULL,
                          proj=c(1,2), splom=TRUE, boxes=FALSE,
-                         steps=x$cvfit$cv.nsteps,
+                         steps=object$cvfit$cv.nsteps,
                          pch=16, cex=0.5, col=2:(length(steps)+1),
                          col.box=2:(length(steps)+1), lty.box=rep(2,length(steps)), lwd.box=rep(1,length(steps)),
                          add.legend=TRUE,
                          device=NULL, file="Scatter Plot", path=getwd(),
                          horizontal=FALSE, width=5, height=5, ...) {
 
-  if (!inherits(x, 'PRSP'))
-        stop("Primary argument much be a PRSP object")
+  if (!inherits(object, 'PRSP'))
+        stop("Primary argument much be an object of class 'PRSP' \n")
 
-  if (x$plot) {
+  if (object$plot) {
 
     scatterplot <- function(object,
                             main,
@@ -889,7 +957,7 @@ plot_scatter <- function(x,
 
     if (is.null(device)) {
         dev.new(width=width, height=height, title="Scatter Plot", noRStudioGD = TRUE)
-        scatterplot(object=x,
+        scatterplot(object=object,
                     main=main,
                     proj=proj, splom=splom, boxes=boxes, steps=steps,
                     add.legend=add.legend, pch=pch, cex=cex, col=col,
@@ -901,7 +969,7 @@ plot_scatter <- function(x,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         postscript(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, horizontal=horizontal)
-        scatterplot(object=x,
+        scatterplot(object=object,
                     main=main,
                     proj=proj, splom=splom, boxes=boxes, steps=steps,
                     add.legend=add.legend, pch=pch, cex=cex, col=col,
@@ -914,7 +982,7 @@ plot_scatter <- function(x,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         pdf(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, paper=ifelse(test=horizontal, yes="USr", no="US"))
-        scatterplot(object=x,
+        scatterplot(object=object,
                     main=main,
                     proj=proj, splom=splom, boxes=boxes, steps=steps,
                     add.legend=add.legend, pch=pch, cex=cex, col=col,
@@ -938,10 +1006,10 @@ plot_scatter <- function(x,
 ################
 # Usage         :
 ################
-#                    plot_boxtraj (x,
+#                    plot_boxtraj (object,
 #                                  main=NULL,
 #                                  xlab="Box Mass", ylab="Covariate Range",
-#                                  toplot=x$used,
+#                                  toplot=object$used,
 #                                  col.cov, lty.cov, lwd.cov,
 #                                  col=1, lty=1, lwd=1,
 #                                  cex=1, add.legend=FALSE, text.legend=NULL,
@@ -963,10 +1031,10 @@ plot_scatter <- function(x,
 #
 ##########################################################################################################################################
 
-plot_boxtraj <- function(x,
+plot_boxtraj <- function(object,
                          main=NULL,
                          xlab="Box Mass", ylab="Covariate Range",
-                         toplot=x$used,
+                         toplot=object$used,
                          col.cov, lty.cov, lwd.cov,
                          col=1, lty=1, lwd=1,
                          cex=1, add.legend=FALSE, text.legend=NULL,
@@ -974,10 +1042,10 @@ plot_boxtraj <- function(x,
                          device=NULL, file="Covariate Trajectory Plots", path=getwd(),
                          horizontal=FALSE, width=8.5, height=11.5, ...) {
 
-  if (!inherits(x, 'PRSP'))
-        stop("Primary argument much be a PRSP object")
+  if (!inherits(object, 'PRSP'))
+        stop("Primary argument much be an object of class 'PRSP' \n")
 
-  if (x$plot) {
+  if (object$plot) {
     boxtrajplot <- function(object,
                             main, xlab, ylab,
                             toplot,
@@ -1104,7 +1172,7 @@ plot_boxtraj <- function(x,
 
     if (is.null(device)) {
         dev.new(width=width, height=height, title="Covariate Trajectory Plots", noRStudioGD = TRUE)
-        boxtrajplot(object=x,
+        boxtrajplot(object=object,
                     main=main, xlab=xlab, ylab=ylab,
                     toplot=toplot,
                     col.cov=col.cov, lty.cov=lty.cov, lwd.cov=lwd.cov,
@@ -1118,7 +1186,7 @@ plot_boxtraj <- function(x,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         postscript(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, horizontal=horizontal)
-        boxtrajplot(object=x,
+        boxtrajplot(object=object,
                     main=main, xlab=xlab, ylab=ylab,
                     toplot=toplot,
                     col.cov=col.cov, lty.cov=lty.cov, lwd.cov=lwd.cov,
@@ -1133,7 +1201,7 @@ plot_boxtraj <- function(x,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         pdf(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, paper=ifelse(test=horizontal, yes="USr", no="US"))
-        boxtrajplot(object=x,
+        boxtrajplot(object=object,
                     main=main, xlab=xlab, ylab=ylab,
                     toplot=toplot,
                     col.cov=col.cov, lty.cov=lty.cov, lwd.cov=lwd.cov,
@@ -1160,10 +1228,10 @@ plot_boxtraj <- function(x,
 ################
 # Usage         :
 ################
-#                    plot_boxtrace (x,
+#                    plot_boxtrace (object,
 #                                   main=NULL,
 #                                   xlab="Box Mass", ylab="Covariate Range (centered)",
-#                                   toplot=x$used,
+#                                   toplot=object$used,
 #                                   center=TRUE, scale=FALSE,
 #                                   col.cov, lty.cov, lwd.cov,
 #                                   col=1, lty=1, lwd=1,
@@ -1185,9 +1253,9 @@ plot_boxtraj <- function(x,
 #
 ##########################################################################################################################################
 
-plot_boxtrace <- function(x,
+plot_boxtrace <- function(object,
                           main=NULL, xlab="Box Mass", ylab="Covariate Range (centered)",
-                          toplot=x$used,
+                          toplot=object$used,
                           center=TRUE, scale=FALSE,
                           col.cov, lty.cov, lwd.cov,
                           col=1, lty=1, lwd=1,
@@ -1195,10 +1263,10 @@ plot_boxtrace <- function(x,
                           device=NULL, file="Covariate Trace Plots", path=getwd(),
                           horizontal=FALSE, width=8.5, height=8.5, ...) {
 
-  if (!inherits(x, 'PRSP'))
-        stop("Primary argument much be a PRSP object")
+  if (!inherits(object, 'PRSP'))
+        stop("Primary argument much be an object of class 'PRSP' \n")
 
-  if (x$plot) {
+  if (object$plot) {
     boxtraceplot <- function(object,
                              main, xlab, ylab,
                              toplot,
@@ -1270,7 +1338,7 @@ plot_boxtrace <- function(x,
 
     if (is.null(device)) {
         dev.new(width=width, height=height, title="Covariate Trace Plots", noRStudioGD = TRUE)
-        boxtraceplot(object=x,
+        boxtraceplot(object=object,
                      main=main, xlab=xlab, ylab=ylab,
                      toplot=toplot,
                      center=center, scale=scale,
@@ -1284,7 +1352,7 @@ plot_boxtrace <- function(x,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         postscript(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, horizontal=horizontal)
-        boxtraceplot(object=x,
+        boxtraceplot(object=object,
                      main=main, xlab=xlab, ylab=ylab,
                      toplot=toplot,
                      center=center, scale=scale,
@@ -1299,7 +1367,7 @@ plot_boxtrace <- function(x,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         pdf(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, paper=ifelse(test=horizontal, yes="USr", no="US"))
-        boxtraceplot(object=x,
+        boxtraceplot(object=object,
                      main=main, xlab=xlab, ylab=ylab,
                      toplot=toplot,
                      center=center, scale=scale,
@@ -1326,11 +1394,11 @@ plot_boxtrace <- function(x,
 ################
 # Usage         :
 ################
-#                    plot_boxkm (x,
+#                    plot_boxkm (object,
 #                                main=NULL,
 #                                xlab="Time", ylab="Probability",
 #                                precision=1e-3, mark=3, col=2, cex=1,
-#                                steps=1:x$cvfit$cv.nsteps,
+#                                steps=1:object$cvfit$cv.nsteps,
 #                                nr=3, nc=4,
 #                                device=NULL, file="Survival Plots", path=getwd(),
 #                                horizontal=TRUE, width=11.5, height=8.5, ...)
@@ -1349,19 +1417,19 @@ plot_boxtrace <- function(x,
 #
 ##########################################################################################################################################
 
-plot_boxkm <- function(x,
+plot_boxkm <- function(object,
                        main=NULL,
                        xlab="Time", ylab="Probability",
                        precision=1e-3, mark=3, col=2, cex=1,
-                       steps=1:x$cvfit$cv.nsteps,
+                       steps=1:object$cvfit$cv.nsteps,
                        nr=3, nc=4,
                        device=NULL, file="Survival Plots", path=getwd(),
                        horizontal=TRUE, width=11.5, height=8.5, ...) {
 
-  if (!inherits(x, 'PRSP'))
-        stop("Primary argument much be a PRSP object")
+  if (!inherits(object, 'PRSP'))
+        stop("Primary argument much be an object of class 'PRSP' \n")
 
-  if (x$plot) {
+  if (object$plot) {
 
     boxkmplot <- function(object,
                           main, xlab, ylab,
@@ -1419,7 +1487,7 @@ plot_boxkm <- function(x,
 
     if (is.null(device)) {
         dev.new(width=width, height=height, title="Survival Plots", noRStudioGD = TRUE)
-        boxkmplot(object=x,
+        boxkmplot(object=object,
                   main=main, xlab=xlab, ylab=ylab,
                   precision=precision, mark=mark, col=col, cex=cex,
                   steps=steps,
@@ -1431,7 +1499,7 @@ plot_boxkm <- function(x,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         postscript(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, horizontal=horizontal)
-        boxkmplot(object=x,
+        boxkmplot(object=object,
                   main=main, xlab=xlab, ylab=ylab,
                   precision=precision, mark=mark, col=col, cex=cex,
                   steps=steps,
@@ -1444,7 +1512,7 @@ plot_boxkm <- function(x,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         pdf(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, paper=ifelse(test=horizontal, yes="USr", no="US"))
-        boxkmplot(object=x,
+        boxkmplot(object=object,
                   main=main, xlab=xlab, ylab=ylab,
                   precision=precision, mark=mark, col=col, cex=cex,
                   steps=steps,

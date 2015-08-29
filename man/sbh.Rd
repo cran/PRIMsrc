@@ -12,7 +12,7 @@
 \usage{
   sbh(dataset, 
       B = 10, K = 5, A = 1000, 
-      cpv = FALSE,
+      vs = TRUE, cpv = FALSE,
       cvtype=c("combined", "averaged", "none"), 
       cvcriterion=c("lrt", "cer", "lhr"),
       arg = "beta=0.05,alpha=0.1,minn=10,L=NULL,peelcriterion=\"lr\"",
@@ -34,6 +34,10 @@
   }
   \item{A}{
     Positive \code{integer} scalar of the number of permutations for the computation of cross-validated p-values. Defaults to 1000.
+  }
+  \item{vs}{
+    \code{logical} scalar. Flag for optional variable (covariate) pre-selection. 
+    Defaults to \code{TRUE}.
   }
   \item{cpv}{
     \code{logical} scalar. Flag for computation of permutation p-values. 
@@ -82,14 +86,14 @@
 }
 
 \details{
-  The function relies on an internal variable pre-selection procedure before the PRSP algorithm is run. At this point,
-  this is done by regular Cox-regression (from the R package \pkg{survival}) or cross-validated Elasticnet Regularized Cox-Regression 
-  (from the R package \pkg{glmnet}), depending on whether the number of covariates is less (\eqn{p \le n}) or greater (\eqn{p > n}) 
-  than the number of samples, respectively. In the latter case, both Elasticnet mixing (\code{alpha}) and shrinkage (\code{lambda}) parameters 
-  are simultaneously estimated by \code{glmnet::cv.glmnet} function internal cross-validation.
-  
-  Also, at this point, the main function \code{sbh} performs the search of the \emph{first} box of the recursive coverage (outer) loop of our 
+    
+  At this point, the main function \code{sbh} performs the search of the \emph{first} box of the recursive coverage (outer) loop of our 
   Patient Recursive Survival Peeling (PRSP) algorithm.
+    
+  Also, the main function relies on an optional variable pre-selection procedure that is run before the PRSP algorithm. 
+  At this point, this is done by Elastic-Net (EN) penalization of the partial likelihood, where both mixing (\code{alpha}) 
+  and overal shrinkage (\code{lambda}) parameters are simultaneously estimated by cross-validation using 
+  the \code{glmnet::cv.glmnet} function of the R package \pkg{glmnet}. 
     
   The \code{PRSP} object contains cross-validated estimates of all the decision-rules of pre-selected covariates and 
   all other statistical quantities of interest at each iteration of the peeling sequence (inner loop of the PRSP algorithm). 
@@ -143,13 +147,14 @@
 
 \value{
   Object of \code{class} \code{PRSP} (Patient Recursive Survival Peeling)
-  \code{List} containing the following 20 fields:
+  \code{List} containing the following 21 fields:
     \item{x}{\code{numeric} \code{matrix} from original dataset with pre-selected covariates only.}
     \item{times}{\code{numeric} \code{vector} of observed failure / survival times.}
     \item{status}{\code{numeric} \code{vector} of observed event indicator in \{1,0\}.}
     \item{B}{positive \code{integer} of the number of replications used in the cross-validation procedure.}
     \item{K}{positive \code{integer} of the number of folds used in the cross-validation procedure.}
     \item{A}{positive \code{integer} of the number of permutations used for the computation of permutation p-values.}
+    \item{vs}{\code{logical} scalar of returned flag of optional variable pre-selection.}
     \item{cpv}{\code{logical} scalar of returned flag of optional computation of permutation p-values.}
     \item{cvtype}{\code{character} \code{vector} of the cross-validation technique used.}
     \item{cvcriterion}{\code{character} \code{vector} of cross-validation optimization criterion used.}
@@ -161,19 +166,22 @@
     \item{timeval}{\code{Numeric} scalar of survival time used.}
     \item{cvfit}{\code{List} with 7 fields of cross-validated estimates:
         \itemize{
-            \item{cv.maxsteps}: \code{numeric} scalar of maximal ceiled-mean of number of peeling steps over the replicates
-            \item{cv.nsteps}: \code{numeric} scalar of optimal number of peeling steps according to the optimization criterion
-            \item{cv.trace}: \code{list} of \code{numeric} \code{matrix} and \code{numeric} \code{vector} of covariate usage traces or modal trace values at each step
-            \item{cv.boxind}: \code{logical} \code{matrix} in {\code{TRUE}, \code{FALSE}} of sample box membership indicator (columns) by peeling steps (rows)
-            \item{cv.rules}: \code{data.frame} of decision rules on the covariate (columns) by peeling steps (rows)
-            \item{cv.stats}: \code{numeric} \code{matrix} of box quantities of interest (columns) by peeling steps (rows)
-            \item{cv.pval}: \code{numeric} \code{vector} of log-rank permutation p-values of sepraration of survival distributions}
+            \item{cv.maxsteps}: \code{numeric} scalar of maximal ceiled-mean of number of peeling steps over the replicates.
+            \item{cv.nsteps}: \code{numeric} scalar of optimal number of peeling steps according to the optimization criterion.
+            \item{cv.trace}: \code{list} of \code{numeric} \code{matrix} and \code{numeric} \code{vector} of respectively 
+                  the traces of covariate usage for all replications (columns) for all steps (rows) and 
+                  the modal trace values of covariate usage at each step.
+            \item{cv.boxind}: \code{logical} \code{matrix} in {\code{TRUE}, \code{FALSE}} of individual observation box membership indicator (columns) for all peeling steps (rows).
+            \item{cv.rules}: \code{data.frame} of decision rules on the covariates (columns) for all peeling steps (rows).
+            \item{cv.stats}: \code{numeric} \code{matrix} of box endpoint quantities of interest (columns) for all peeling steps (rows).
+            \item{cv.pval}: \code{numeric} \code{vector} of log-rank permutation p-values of sepraration of survival distributions.}
         }
     \item{cvprofiles}{\code{List} of (\eqn{B}) of \code{numeric} \code{vectors}, one for each replicate, 
         of the cross-validated statistics used in the optimization criterion (one set by user) as a function of the number of peeling steps.}
     \item{cvmeanprofiles}{\code{List} of \code{numeric} \code{vectors} of the cross-validated mean statistics over the replicates.
         used in the optimization criterion (one set by user) as a function of the number of peeling steps.}
     \item{plot}{\code{logical} scalar of the returned flag for plotting results (\code{TRUE} if CV successful).}
+    \item{config}{\code{List} with 7 fields of parameters used for configuring the parallelization including \code{parallel} and \code{conf}.}
     \item{seed}{User seed(s) used:
         \code{integer} of a single value, if parallelization is used
         \code{integer} \code{vector} of values, one for each replication, if parallelization is not used.}
@@ -248,8 +256,11 @@ library("PRIMsrc")
     # Demo with a synthetic dataset
     # Use help for descriptions
     #===================================================
-    data("Synthetic.1", package="PRIMsrc")
+    data("Synthetic.1", "Synthetic.5", "Real.1", "Real.2", package="PRIMsrc")
     ?Synthetic.1
+    ?Synthetic.5
+    ?Real.1
+    ?Real.2
 }
 
 #===================================================
@@ -262,7 +273,8 @@ library("PRIMsrc")
 #===================================================
 CVCOMBREP.synt1 <- sbh(dataset = Synthetic.1, 
                        cvtype = "combined", cvcriterion = "lrt",
-                       B = 1, K = 5, cpv = FALSE, probval = 0.5, 
+                       B = 1, K = 5, 
+                       vs = TRUE, cpv = FALSE, probval = 0.5, 
                        arg = "beta=0.05,
                               alpha=0.1,
                               minn=10,
@@ -285,11 +297,11 @@ round(CVCOMBREP.synt1$cvfit$cv.stats$mean,2)
 
 \dontrun{
     #===================================================
-    # Examples of parallelization below with 
-    # a SOCKET or MPI cluster configuration
+    # Examples of parallel backend parametrization 
     #===================================================
-    # 1- WINDOWS multicores PC with SOCKET communication
-    #    With a 2-Quad (8-CPUs) PC
+    # Example #1 - 1-Quad (4-core double threaded) PC 
+    # Running WINDOWS
+    # With SOCKET communication
     #===================================================
     if (.Platform$OS.type == "windows") {
         cpus <- detectCores()
@@ -301,11 +313,10 @@ round(CVCOMBREP.synt1$cvfit$cv.stats$mean,2)
                      "outfile" = "")
     }
     #===================================================
-    # 2- LINUX multinodes cluster with SOCKET communication
-    #    with 4-nodes (32-CPUs) cluster
-    #    with 1 masternode and 3 workernodes
-    #    All hosts run identical setups
-    #    Same number of core CPUs (8) per node
+    # Example #2 - 1 master node + 3 worker nodes cluster
+    # All nodes equipped with identical setups and multicores
+    # Running LINUX
+    # With SOCKET communication
     #===================================================
     if (.Platform$OS.type == "unix") {
         masterhost <- Sys.getenv("HOSTNAME")
@@ -321,9 +332,11 @@ round(CVCOMBREP.synt1$cvfit$cv.stats$mean,2)
                      "outfile" = "")
     }
     #===================================================
-    # 3- LINUX multinodes cluster with MPI communication
-    #    Here, a file named ".nodes" (e.g. in the home directory)
-    #    must contain the list of nodes of the cluster
+    # Example #3 - Multinode multicore per node cluster
+    # Running LINUX 
+    # with MPI communication
+    # Here, a file named ".nodes" (e.g. in the home directory)
+    # contains the list of nodes of the cluster
     #===================================================
     if (.Platform$OS.type == "unix") {
         hosts <- scan(file=paste(Sys.getenv("HOME"), "/.nodes", sep=""), 
@@ -349,7 +362,8 @@ round(CVCOMBREP.synt1$cvfit$cv.stats$mean,2)
     #===================================================
     CVCOMBREP.synt1 <- sbh(dataset = Synthetic.1, 
                            cvtype = "combined", cvcriterion = "lrt",
-                           B = 10, K = 5, A = 1024, cpv = TRUE, probval = 0.5, 
+                           B = 10, K = 5, A = 1024, 
+                           vs = TRUE, cpv = TRUE, probval = 0.5, 
                            arg = "beta=0.05,
                                   alpha=0.1,
                                   minn=10,

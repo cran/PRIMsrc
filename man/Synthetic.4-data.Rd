@@ -9,7 +9,7 @@
 \description{
   Modeling survival model #4 as described in Dazard et al. (2015) with censoring.
   Here, the regression function uses all of the predictors, which are also part of the design matrix. 
-  In thiss example, the signal is limited to a box-shaped region R of the predictor space. 
+  In this example, the signal is limited to a box-shaped region R of the predictor space. 
   Survival time was generated from an exponential model with rate parameter \eqn{\lambda} (and mean \eqn{\frac{1}{\lambda}})
   according to a Cox-PH model with hazard exp(eta), where eta(.) is the regression function.
   Censoring indicator were generated from a uniform distribution on [0, 3].
@@ -20,7 +20,7 @@
 
 \format{
   Each dataset consists of a \code{numeric} \code{matrix} containing \eqn{n=250} observations (samples) 
-  by rows and \eqn{p=5} variables by columns, including the censoring indicator and (censored) time-to-event variables.
+  by rows and \eqn{p=3} variables by columns, not including the censoring indicator and (censored) time-to-event variables.
   It comes as a compressed Rda data file.
 }
 

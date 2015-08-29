@@ -49,8 +49,8 @@ o RELEASE 0.5.0
 ---------------------------------------------------------------------------------
 Date   : 2015-03-16
 o RELEASE 0.5.3
-- Added S3-class generic summary function.
-- Added S3-class generic predict function.
+- Added S3-class generic 'summary' function.
+- Added S3-class generic 'predict' function.
 - Made all plotting functions S3-class functions and renamed them as plot.xxx(...).
 - Test build under R 3.0.2 and release update to GitHub.
 ---------------------------------------------------------------------------------
@@ -67,9 +67,9 @@ o RELEASE 0.5.5
 ---------------------------------------------------------------------------------
 Date   : 2015-06-19
 o RELEASE 0.5.6
-- Correction/extension of internal variable selection procedure by cross-validing 
-  both parameters: alpha (mixing) as well as lambda (shrinkage) in the Elasticnet-Regularized 
-  Cox Regression function of the 'glmnet' package. This allows to get true lasso-ridge penalty.
+- Correction/extension of internal variable pre-selection procedure by cross-validing 
+  both parameters alpha (mixing) and lambda (shrinkage) of the 'glmnet' package. 
+  This allows to get true lasso-ridge shrinkage estimates.
 - Improved robustness in internal functions list2mat and list2array.
 - Minor improvement in internal function cv.folds.
 - Added vignettes
@@ -85,10 +85,20 @@ o RELEASE 0.5.7
 - Added Cumulative Hazard Summary statistic (derived from the Nelson-Aalen estimator) 
   as new peeling criterion option in the PRSP algorithm.
 - Removed S3-class generic method for all plot functions and renaming as plot_xxx.
-- Removed real dataset #2 for reasons of size and redundancy with real dataset #1.
 - Built and tested under R-devel (2015-07-20 r68705). 
 - Initial release to CRAN and update to GitHub.
 ---------------------------------------------------------------------------------
-
-
-
+Date   : 2015-08-28
+o RELEASE 0.5.8
+- Removed pre-selection of variables (covariates) by regular Cox-regression
+  and made the remaining Elastic-Net pre-selection of variables optional by
+  passing an additional argument in the main function sbh().
+- Main function sbh() now returns the parameters used for configuring the parallelization.
+- Replaced real dataset #2 of breast cancer data with lung cancer data for reason of size.
+- Added S3-class generic 'print' function and updated S3-class generic 'summary' function.
+- Created a new internal subroutine cv.presel() for (optional) variable pre-selection.
+- Changed main argument of plot functions from 'x' to 'object'.
+- Minor corrections in the manual.
+- Built and tested under R-devel (2015-08-02 r68804).
+- Release update to GitHub.
+---------------------------------------------------------------------------------
