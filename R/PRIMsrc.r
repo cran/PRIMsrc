@@ -69,7 +69,7 @@ sbh <- function(dataset,
     times[times <= 0] <- 10^(-digits)
     n <- nrow(x)
     p <- ncol(x)
-    if (is.null(colnames(x))) colnames(x) <- paste("X", 1:ncol(x), sep="")
+    if (is.null(colnames(x))) colnames(x) <- paste("X", 1:p, sep="")
   }
 
   # Summarizing user choices
@@ -378,6 +378,8 @@ sbh <- function(dataset,
         cat("Generating cross-validated box statistics for each step ...\n")
         CV.support.mu <- lapply.mat(X=CV.support, FUN=function(x){mean(x, na.rm=TRUE)}, coltrunc=CV.nsteps)
         CV.support.sd <- lapply.mat(X=CV.support, FUN=function(x){sd(x, na.rm=TRUE)}, coltrunc=CV.nsteps)
+        CV.size.mu <- round(n*CV.support.mu,0)
+        CV.size.sd <- n*CV.support.sd
         CV.lhr.mu <- lapply.mat(X=CV.lhr, FUN=function(x){mean(x, na.rm=TRUE)}, coltrunc=CV.nsteps)
         CV.lhr.sd <- lapply.mat(X=CV.lhr, FUN=function(x){sd(x, na.rm=TRUE)}, coltrunc=CV.nsteps)
         CV.lrt.mu <- lapply.mat(X=CV.lrt, FUN=function(x){mean(x, na.rm=TRUE)}, coltrunc=CV.nsteps)
@@ -393,6 +395,7 @@ sbh <- function(dataset,
         CV.min.prob.bar.mu <- lapply.mat(X=CV.min.prob.bar, FUN=function(x){mean(x, na.rm=TRUE)}, coltrunc=CV.nsteps)
         CV.min.prob.bar.sd <- lapply.mat(X=CV.min.prob.bar, FUN=function(x){sd(x, na.rm=TRUE)}, coltrunc=CV.nsteps)
         CV.stats.mu <- data.frame("cv.support"=CV.support.mu,
+                                  "cv.size"=CV.size.mu,
                                   "cv.lhr"=CV.lhr.mu,
                                   "cv.lrt"=CV.lrt.mu,
                                   "cv.cer"=CV.cer.mu,
@@ -402,6 +405,7 @@ sbh <- function(dataset,
                                   "cv.min.prob.bar"=CV.min.prob.bar.mu)
         rownames(CV.stats.mu) <- paste("step", 0:(CV.nsteps-1), sep="")
         CV.stats.sd <- data.frame("cv.support"=CV.support.sd,
+                                  "cv.size"=CV.size.sd,
                                   "cv.lhr"=CV.lhr.sd,
                                   "cv.lrt"=CV.lrt.sd,
                                   "cv.cer"=CV.cer.sd,
@@ -463,7 +467,7 @@ sbh <- function(dataset,
 
 
 ##########################################################################################################################################
-# 2. END-USER FUNCTIONS FOR NEWS, SUMMARY AND PREDICTION
+# 2. END-USER FUNCTION FOR NEWS
 ##########################################################################################################################################
 
 ##########################################################################################################################################
@@ -494,6 +498,10 @@ PRIMsrc.news <- function(...) {
 
 
 
+
+##########################################################################################################################################
+# 3. END-USER S3-GENERIC FUNCTIONS FOR SUMMARY, PRINT, PLOT AND PREDICTION
+##########################################################################################################################################
 
 ##########################################################################################################################################
 ################
@@ -548,7 +556,6 @@ summary.PRSP <- function(object, ...) {
   cat("\t Peeling percentile: ", alpha*100, "%\n")
   cat("\t Minimal box support: ", beta*100, "%\n")
   cat("\t Minimal box sample size: ", minn, "\n")
-  cat("\t Peeling steps: ", L, "\n")
   cat("Cross-validation technique: ", object$cvtype, "\n")
   cat("Cross-validation criterion: ", disp(criterion=object$cvcriterion), "\n")
   cat("Computation of permutation p-values:", object$cpv, "\n")
@@ -601,9 +608,9 @@ print.PRSP <- function(x, digits=3, ...) {
   print(obj$cvfit$cv.maxsteps)
   cat("\n")
   
-  out <- obj$cvfit$cv.nsteps-1
+  out <- obj$cvfit$cv.nsteps
   names(out) <- NULL
-  cat("Optimum number of peeling steps (not counting step #0):\n")
+  cat("Optimal number of peeling steps (counting step #0):\n")
   print(out)
   cat("\n")
   
@@ -625,19 +632,164 @@ print.PRSP <- function(x, digits=3, ...) {
   cat("\n")
   
   out <- format(obj$cvfit$cv.stats$mean, digits=digits)
-  colnames(out) <- c("Support", "LHR", "LRT", "CER", "EFT", "EFP", "MEFT", "MEFP")
+  colnames(out) <- c("Support", "Size", "LHR", "LRT", "CER", "EFT", "EFP", "MEFT", "MEFP")
   cat("Box endpoint quantities of interest (columns) for all peeling steps (rows):\n")
   print(out)
-  cat("\n")
-  
-  cat("Box support (sample) size at each peeling step:\n")
-  print(round(nrow(obj$x)*obj$cvfit$cv.stats$mean$cv.support,0))
   cat("\n")
   
   cat("Individual observation box membership indicator (columns) for all peeling steps (rows):\n")
   print(obj$cvfit$cv.boxind)
   cat("\n")
   
+  invisible()
+}
+##########################################################################################################################################
+
+
+
+
+##########################################################################################################################################
+################
+# Usage         :
+################
+#                    plot(x,
+#                         main=NULL,
+#                         proj=c(1,2), splom=TRUE, boxes=FALSE,
+#                         steps=x$cvfit$cv.nsteps,
+#                         pch=16, cex=0.5, col=, col=2:(length(steps)+1),
+#                         col.box=2:(length(steps)+1), lty.box=rep(2,length(steps)), lwd.box=rep(1,length(steps)),
+#                         add.legend=TRUE,
+#                         device=NULL, file="Scatter Plot", path=getwd(),
+#                         horizontal=FALSE, width=5, height=5, ...)
+#
+################
+# Description   :
+################
+#
+################
+# Arguments     :
+################
+#
+################
+# Values        :
+################
+#
+##########################################################################################################################################
+
+plot.PRSP <- function(x,
+                      main=NULL,
+                      proj=c(1,2), splom=TRUE, boxes=FALSE,
+                      steps=x$cvfit$cv.nsteps,
+                      pch=16, cex=0.5, col=2:(length(steps)+1),
+                      col.box=2:(length(steps)+1), lty.box=rep(2,length(steps)), lwd.box=rep(1,length(steps)),
+                      add.legend=TRUE,
+                      device=NULL, file="Scatter Plot", path=getwd(),
+                      horizontal=FALSE, width=5, height=5, ...) {
+
+    if (!inherits(x, 'PRSP'))
+        stop("Primary argument much be an object of class 'PRSP' \n")
+
+    obj <- x
+    if (obj$plot) {
+
+    scatterplot <- function(obj,
+                            main,
+                            proj, splom, boxes,
+                            steps,
+                            add.legend, pch, cex, col,
+                            col.box, lty.box, lwd.box, ...) {
+
+        if (!is.null(main)) {
+            par(mfrow=c(1, 1), oma=c(0, 0, 3, 0), mar=c(2.5, 2.5, 4.0, 1.5), mgp=c(1.5, 0.5, 0))
+        } else {
+            par(mfrow=c(1, 1), oma=c(0, 0, 0, 0), mar=c(2.5, 2.5, 4.0, 1.5), mgp=c(1.5, 0.5, 0))
+        }
+
+        X <- obj$x[,proj]
+        X.names <- colnames(X)
+
+        if (is.null(steps))
+          steps <- obj$cvfit$cv.nsteps
+
+        L <- length(steps)
+        eqscplot(x=X, type="p", pch=pch, cex=cex, col=1, main=NULL, xlab=X.names[1], ylab=X.names[2], ...)
+        if (splom) {
+            for (i in 1:L) {
+                w <- obj$cvfit$cv.boxind[steps[i],]
+                points(x=obj$x[w,proj], type="p", pch=pch, cex=cex, col=col[i], ...)
+            }
+        }
+        if (boxes) {
+            X.range <- apply(X=X, MARGIN=2, FUN=range)
+            boxcut <- obj$cvfit$cv.rules$mean[steps,proj,drop=FALSE]
+            varsign <- obj$varsign[proj]
+            vertices <- vector(mode="list", length=L)
+            for (i in 1:L) {
+                vertices[[i]] <- matrix(data=NA, nrow=2, ncol=2, dimnames=list(c("LB","UB"), X.names))
+                for (j in 1:2) {
+                    vertices[[i]][1,j] <- ifelse(test=(varsign[j] > 0),
+                                                 yes=max(X.range[1,j], boxcut[i,j]),
+                                                 no=min(X.range[1,j], boxcut[i,j]))
+                    vertices[[i]][2,j] <- ifelse(test=(varsign[j] < 0),
+                                                 yes=min(X.range[2,j], boxcut[i,j]),
+                                                 no=max(X.range[2,j], boxcut[i,j]))
+                }
+            }
+            for (i in 1:L) {
+                rect(vertices[[i]][1,1], vertices[[i]][1,2], vertices[[i]][2,1], vertices[[i]][2,2],
+                     border=col.box[i], col=NA, lty=lty.box[i], lwd=lwd.box[i])
+            }
+        }
+        if (!is.null(main)) {
+            mtext(text=main, cex=1, side=3, outer=TRUE)
+        }
+        if (add.legend) {
+            legend("topleft", xpd=TRUE, inset=0.01, legend=paste("Step: ", steps, sep=""), pch=pch, col=col, cex=cex)
+        }
+    }
+
+    if (is.null(device)) {
+        cat("Device: ",  dev.cur(), "\n")
+        scatterplot(obj=obj,
+                    main=main,
+                    proj=proj, splom=splom, boxes=boxes, steps=steps,
+                    add.legend=add.legend, pch=pch, cex=cex, col=col,
+                    col.box=col.box, lty.box=lty.box, lwd.box=lwd.box)
+    } else if (device == "PS") {
+        path <- normalizePath(path=paste(path, "/", sep=""), winslash="\\", mustWork=FALSE)
+        file <- paste(file, ".ps", sep="")
+        cat("\nOUTPUT: \n")
+        cat("Filename : ", file, "\n")
+        cat("Directory: ", path, "\n")
+        postscript(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, horizontal=horizontal)
+        cat("Device: ",  dev.cur(), "\n")
+        scatterplot(obj=obj,
+                    main=main,
+                    proj=proj, splom=splom, boxes=boxes, steps=steps,
+                    add.legend=add.legend, pch=pch, cex=cex, col=col,
+                    col.box=col.box, lty.box=lty.box, lwd.box=lwd.box)
+        dev.off()
+    } else if (device == "PDF") {
+        path <- normalizePath(path=paste(path, "/", sep=""), winslash="\\", mustWork=FALSE)
+        file <- paste(file, ".pdf", sep="")
+        cat("\nOUTPUT: \n")
+        cat("Filename : ", file, "\n")
+        cat("Directory: ", path, "\n")
+        pdf(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, paper=ifelse(test=horizontal, yes="USr", no="US"))
+        cat("Device: ",  dev.cur(), "\n")
+        scatterplot(obj=obj,
+                    main=main,
+                    proj=proj, splom=splom, boxes=boxes, steps=steps,
+                    add.legend=add.legend, pch=pch, cex=cex, col=col,
+                    col.box=col.box, lty.box=lty.box, lwd.box=lwd.box)
+        dev.off()
+    } else {
+        stop("Currently allowed display devices are \"PS\" (Postscript) or \"PDF\" (Portable Document Format) \n")
+    }
+  } else {
+    cat("Either the covariate pre-selection or the Survival Bump Hunting modeling failed for this dataset.\n
+        So, there is nothing to plot here.\n")
+  }
   invisible()
 }
 ##########################################################################################################################################
@@ -717,7 +869,7 @@ predict.PRSP <- function (object, newdata, steps, na.action = na.omit, ...) {
 
 
 ##########################################################################################################################################
-# 3. END-USER PLOTTING FUNCTIONS FOR MODEL VALIDATION AND VISUALIZATION OF RESULTS
+# 4. END-USER PLOTTING FUNCTIONS FOR MODEL VALIDATION AND VISUALIZATION OF RESULTS
 ##########################################################################################################################################
 
 ##########################################################################################################################################
@@ -814,7 +966,7 @@ plot_profile <- function(object,
       }
 
       if (is.null(device)) {
-        dev.new(width=width, height=height, title="Profile Plot", noRStudioGD = TRUE)
+        cat("Device: ",  dev.cur(), "\n")
         profileplot(object=object, main=main, xlab=xlab, ylab=ylab,
                     add.sd=add.sd, add.legend=add.legend, add.profiles=add.profiles,
                     pch=pch, col=col, lty=lty, lwd=lwd, cex=cex)
@@ -825,6 +977,7 @@ plot_profile <- function(object,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         postscript(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, horizontal=horizontal)
+        cat("Device: ",  dev.cur(), "\n")
         profileplot(object=object, main=main, xlab=xlab, ylab=ylab,
                     add.sd=add.sd, add.legend=add.legend, add.profiles=add.profiles,
                     pch=pch, col=col, lty=lty, lwd=lwd, cex=cex)
@@ -836,6 +989,7 @@ plot_profile <- function(object,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         pdf(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, paper=ifelse(test=horizontal, yes="USr", no="US"))
+        cat("Device: ",  dev.cur(), "\n")
         profileplot(object=object, main=main, xlab=xlab, ylab=ylab,
                     add.sd=add.sd, add.legend=add.legend, add.profiles=add.profiles,
                     pch=pch, col=col, lty=lty, lwd=lwd, cex=cex)
@@ -843,153 +997,6 @@ plot_profile <- function(object,
       } else {
         stop("Currently allowed display devices are \"PS\" (Postscript) or \"PDF\" (Portable Document Format) \n")
       }
-    }
-  } else {
-    cat("Either the covariate pre-selection or the Survival Bump Hunting modeling failed for this dataset.\n
-        So, there is nothing to plot here.\n")
-  }
-  invisible()
-}
-##########################################################################################################################################
-
-
-
-
-
-##########################################################################################################################################
-################
-# Usage         :
-################
-#                    plot_scatter(object,
-#                                 main=NULL,
-#                                 proj=c(1,2), splom=TRUE, boxes=FALSE,
-#                                 steps=object$cvfit$cv.nsteps,
-#                                 pch=16, cex=0.5, col=, col=2:(length(steps)+1),
-#                                 col.box=2:(length(steps)+1), lty.box=rep(2,length(steps)), lwd.box=rep(1,length(steps)),
-#                                 add.legend=TRUE,
-#                                 device=NULL, file="Scatter Plot", path=getwd(),
-#                                 horizontal=FALSE, width=5, height=5, ...)
-#
-################
-# Description   :
-################
-#
-################
-# Arguments     :
-################
-#
-################
-# Values        :
-################
-#
-##########################################################################################################################################
-
-plot_scatter <- function(object,
-                         main=NULL,
-                         proj=c(1,2), splom=TRUE, boxes=FALSE,
-                         steps=object$cvfit$cv.nsteps,
-                         pch=16, cex=0.5, col=2:(length(steps)+1),
-                         col.box=2:(length(steps)+1), lty.box=rep(2,length(steps)), lwd.box=rep(1,length(steps)),
-                         add.legend=TRUE,
-                         device=NULL, file="Scatter Plot", path=getwd(),
-                         horizontal=FALSE, width=5, height=5, ...) {
-
-  if (!inherits(object, 'PRSP'))
-        stop("Primary argument much be an object of class 'PRSP' \n")
-
-  if (object$plot) {
-
-    scatterplot <- function(object,
-                            main,
-                            proj, splom, boxes,
-                            steps,
-                            add.legend, pch, cex, col,
-                            col.box, lty.box, lwd.box, ...) {
-
-        if (!is.null(main)) {
-            par(mfrow=c(1, 1), oma=c(0, 0, 3, 0), mar=c(2.5, 2.5, 4.0, 1.5), mgp=c(1.5, 0.5, 0))
-        } else {
-            par(mfrow=c(1, 1), oma=c(0, 0, 0, 0), mar=c(2.5, 2.5, 4.0, 1.5), mgp=c(1.5, 0.5, 0))
-        }
-
-        X <- object$x[,proj]
-        X.names <- colnames(X)
-
-        if (is.null(steps))
-          steps <- object$cvfit$cv.nsteps
-
-        L <- length(steps)
-        eqscplot(x=X, type="p", pch=pch, cex=cex, col=1, main=NULL, xlab=X.names[1], ylab=X.names[2], ...)
-        if (splom) {
-            for (i in 1:L) {
-                w <- object$cvfit$cv.boxind[steps[i],]
-                points(x=object$x[w,proj], type="p", pch=pch, cex=cex, col=col[i], ...)
-            }
-        }
-        if (boxes) {
-            X.range <- apply(X=X, MARGIN=2, FUN=range)
-            boxcut <- object$cvfit$cv.rules$mean[steps,proj,drop=FALSE]
-            varsign <- object$varsign[proj]
-            vertices <- vector(mode="list", length=L)
-            for (i in 1:L) {
-                vertices[[i]] <- matrix(data=NA, nrow=2, ncol=2, dimnames=list(c("LB","UB"), X.names))
-                for (j in 1:2) {
-                    vertices[[i]][1,j] <- ifelse(test=(varsign[j] > 0),
-                                                 yes=max(X.range[1,j], boxcut[i,j]),
-                                                 no=min(X.range[1,j], boxcut[i,j]))
-                    vertices[[i]][2,j] <- ifelse(test=(varsign[j] < 0),
-                                                 yes=min(X.range[2,j], boxcut[i,j]),
-                                                 no=max(X.range[2,j], boxcut[i,j]))
-                }
-            }
-            for (i in 1:L) {
-                rect(vertices[[i]][1,1], vertices[[i]][1,2], vertices[[i]][2,1], vertices[[i]][2,2],
-                     border=col.box[i], col=NA, lty=lty.box[i], lwd=lwd.box[i])
-            }
-        }
-        if (!is.null(main)) {
-            mtext(text=main, cex=1, side=3, outer=TRUE)
-        }
-        if (add.legend) {
-            legend("topleft", xpd=TRUE, inset=0.01, legend=paste("Step: ", steps, sep=""), pch=pch, col=col, cex=cex)
-        }
-    }
-
-    if (is.null(device)) {
-        dev.new(width=width, height=height, title="Scatter Plot", noRStudioGD = TRUE)
-        scatterplot(object=object,
-                    main=main,
-                    proj=proj, splom=splom, boxes=boxes, steps=steps,
-                    add.legend=add.legend, pch=pch, cex=cex, col=col,
-                    col.box=col.box, lty.box=lty.box, lwd.box=lwd.box)
-    } else if (device == "PS") {
-        path <- normalizePath(path=paste(path, "/", sep=""), winslash="\\", mustWork=FALSE)
-        file <- paste(file, ".ps", sep="")
-        cat("\nOUTPUT: \n")
-        cat("Filename : ", file, "\n")
-        cat("Directory: ", path, "\n")
-        postscript(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, horizontal=horizontal)
-        scatterplot(object=object,
-                    main=main,
-                    proj=proj, splom=splom, boxes=boxes, steps=steps,
-                    add.legend=add.legend, pch=pch, cex=cex, col=col,
-                    col.box=col.box, lty.box=lty.box, lwd.box=lwd.box)
-        dev.off()
-    } else if (device == "PDF") {
-        path <- normalizePath(path=paste(path, "/", sep=""), winslash="\\", mustWork=FALSE)
-        file <- paste(file, ".pdf", sep="")
-        cat("\nOUTPUT: \n")
-        cat("Filename : ", file, "\n")
-        cat("Directory: ", path, "\n")
-        pdf(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, paper=ifelse(test=horizontal, yes="USr", no="US"))
-        scatterplot(object=object,
-                    main=main,
-                    proj=proj, splom=splom, boxes=boxes, steps=steps,
-                    add.legend=add.legend, pch=pch, cex=cex, col=col,
-                    col.box=col.box, lty.box=lty.box, lwd.box=lwd.box)
-        dev.off()
-    } else {
-        stop("Currently allowed display devices are \"PS\" (Postscript) or \"PDF\" (Portable Document Format) \n")
     }
   } else {
     cat("Either the covariate pre-selection or the Survival Bump Hunting modeling failed for this dataset.\n
@@ -1171,7 +1178,7 @@ plot_boxtraj <- function(object,
     }
 
     if (is.null(device)) {
-        dev.new(width=width, height=height, title="Covariate Trajectory Plots", noRStudioGD = TRUE)
+        cat("Device: ",  dev.cur(), "\n")
         boxtrajplot(object=object,
                     main=main, xlab=xlab, ylab=ylab,
                     toplot=toplot,
@@ -1186,6 +1193,7 @@ plot_boxtraj <- function(object,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         postscript(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, horizontal=horizontal)
+        cat("Device: ",  dev.cur(), "\n")
         boxtrajplot(object=object,
                     main=main, xlab=xlab, ylab=ylab,
                     toplot=toplot,
@@ -1201,6 +1209,7 @@ plot_boxtraj <- function(object,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         pdf(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, paper=ifelse(test=horizontal, yes="USr", no="US"))
+        cat("Device: ",  dev.cur(), "\n")
         boxtrajplot(object=object,
                     main=main, xlab=xlab, ylab=ylab,
                     toplot=toplot,
@@ -1219,7 +1228,6 @@ plot_boxtraj <- function(object,
   invisible()
 }
 ##########################################################################################################################################
-
 
 
 
@@ -1337,7 +1345,7 @@ plot_boxtrace <- function(object,
     }
 
     if (is.null(device)) {
-        dev.new(width=width, height=height, title="Covariate Trace Plots", noRStudioGD = TRUE)
+        cat("Device: ",  dev.cur(), "\n")
         boxtraceplot(object=object,
                      main=main, xlab=xlab, ylab=ylab,
                      toplot=toplot,
@@ -1352,6 +1360,7 @@ plot_boxtrace <- function(object,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         postscript(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, horizontal=horizontal)
+        cat("Device: ",  dev.cur(), "\n")
         boxtraceplot(object=object,
                      main=main, xlab=xlab, ylab=ylab,
                      toplot=toplot,
@@ -1367,6 +1376,7 @@ plot_boxtrace <- function(object,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         pdf(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, paper=ifelse(test=horizontal, yes="USr", no="US"))
+        cat("Device: ",  dev.cur(), "\n")
         boxtraceplot(object=object,
                      main=main, xlab=xlab, ylab=ylab,
                      toplot=toplot,
@@ -1385,7 +1395,6 @@ plot_boxtrace <- function(object,
   invisible()
 }
 ##########################################################################################################################################
-
 
 
 
@@ -1486,7 +1495,7 @@ plot_boxkm <- function(object,
     }
 
     if (is.null(device)) {
-        dev.new(width=width, height=height, title="Survival Plots", noRStudioGD = TRUE)
+        cat("Device: ",  dev.cur(), "\n")
         boxkmplot(object=object,
                   main=main, xlab=xlab, ylab=ylab,
                   precision=precision, mark=mark, col=col, cex=cex,
@@ -1499,6 +1508,7 @@ plot_boxkm <- function(object,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         postscript(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, horizontal=horizontal)
+        cat("Device: ",  dev.cur(), "\n")
         boxkmplot(object=object,
                   main=main, xlab=xlab, ylab=ylab,
                   precision=precision, mark=mark, col=col, cex=cex,
@@ -1512,6 +1522,7 @@ plot_boxkm <- function(object,
         cat("Filename : ", file, "\n")
         cat("Directory: ", path, "\n")
         pdf(file=paste(path, file, sep=""), width=width, height=height, onefile=TRUE, paper=ifelse(test=horizontal, yes="USr", no="US"))
+        cat("Device: ",  dev.cur(), "\n")
         boxkmplot(object=object,
                   main=main, xlab=xlab, ylab=ylab,
                   precision=precision, mark=mark, col=col, cex=cex,
