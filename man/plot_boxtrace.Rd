@@ -7,7 +7,7 @@
 \description{
   Function for plotting the cross-validated covariates traces of a \code{PRSP} object.
   Plot the cross-validated modal trace curves of covariate importance and covariate usage of the 
-  user-specified covariates among the pre-selected ones at each iteration of the peeling sequence 
+  pre-selected covariates specified by user at each iteration of the peeling sequence 
   (inner loop of our PRSP algorithm). 
 }
 
@@ -50,7 +50,7 @@
     \code{Character} \code{vector}. Y axis label. Defaults to "Covariate Range (centered)".
   }
   \item{toplot}{
-    \code{Numeric} \code{vector}. Which of the pre-selected covariates to plot.
+    \code{Numeric} \code{vector}. Which of the pre-selected covariates to plot (in reference to the original index of covariates).
     Defaults to covariates used for peeling.
   }
   \item{center}{

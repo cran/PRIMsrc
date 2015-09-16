@@ -6,7 +6,7 @@
 
 \description{
   Function for plotting the cross-validated peeling trajectories/profiles of a \code{PRSP} object.
-  Applies to the user-specified covariates among the pre-selected ones and 
+  Applies to the pre-selected covariates specified by user and 
   all other statistical quantities of interest at each iteration of the peeling sequence 
   (inner loop of our PRSP algorithm). 
 }
@@ -50,7 +50,7 @@
     \code{Character} \code{vector}. Y axis label. Defaults to "Covariate Range".
   }
   \item{toplot}{
-    \code{Numeric} \code{vector}. Which of the pre-selected covariates to plot.
+    \code{Numeric} \code{vector}. Which of the pre-selected covariates to plot (in reference to the original index of covariates).
     Defaults to covariates used for peeling.
   }
   \item{col.cov}{
