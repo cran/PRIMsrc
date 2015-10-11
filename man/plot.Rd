@@ -7,9 +7,9 @@
 \title{2D Visualization of Data Scatter and Box Vertices}
 
 \description{
-  S3-generic function to plot a scatterplot of the data and the cross-validated box vertices 
-  of a \code{PRSP} object in a plane defined by the user. The plot is for a given peeling step 
-  of the peeling sequence (inner loop of our PRSP algorithm) defined by the user.
+  S3-generic plotting function for two-dimensional visualization of original or predicted data scatter 
+  as well as cross-validated box vertices of a \code{PRSP} object. The scatter plot is for a given 
+  peeling step of the peeling sequence and a given plane, both specified by the user.
 }
 
 \usage{
@@ -155,35 +155,36 @@
 \keyword{Rule-Induction Method}
 
 \examples{
-#===================================================
-# Loading the library and its dependencies
-#===================================================
-library("PRIMsrc")
+    #===================================================
+    # Loading the library and its dependencies
+    #===================================================
+    library("PRIMsrc")
 
-#=================================================================================
-# Simulated dataset #1 (n=250, p=3)
-# Replicated Combined Cross-Validation (RCCV)
-# Peeling criterion = LRT
-# Optimization criterion = LRT
-#=================================================================================
-CVCOMBREP.synt1 <- sbh(dataset = Synthetic.1, 
-                       cvtype = "combined", cvcriterion = "lrt",
-                       B = 1, K = 5, 
-                       vs = TRUE, cpv = FALSE, probval = 0.5, 
-                       arg = "beta=0.05,
-                              alpha=0.1,
-                              minn=10,
-                              L=NULL,
-                              peelcriterion=\"lr\"",
-                       parallel = FALSE, conf = NULL, seed = 123)
+    #=================================================================================
+    # Simulated dataset #1 (n=250, p=3)
+    # Replicated Combined Cross-Validation (RCCV)
+    # Peeling criterion = LRT
+    # Optimization criterion = LRT
+    #=================================================================================
+    CVCOMBREP.synt1 <- sbh(dataset = Synthetic.1, 
+                           cvtype = "combined", cvcriterion = "lrt",
+                           B = 1, K = 5, 
+                           vs = TRUE, cpv = FALSE, 
+                           decimals = 2, probval = 0.5, 
+                           arg = "beta=0.05,
+                                  alpha=0.1,
+                                  minn=10,
+                                  L=NULL,
+                                  peelcriterion=\"lr\"",
+                           parallel = FALSE, conf = NULL, seed = 123)
 
-plot(x = CVCOMBREP.synt1,
-     main = paste("Scatter plot for model #1", sep=""),
-     proj = c(1,2), splom = TRUE, boxes = TRUE,
-     steps = CVCOMBREP.synt1$cvfit$cv.nsteps,
-     pch = 16, cex = 0.5, col = 2,
-     col.box = 2, lty.box = 2, lwd.box = 1,
-     add.legend = TRUE, 
-     device = NULL, file = "Scatter Plot", path=getwd(),
-     horizontal = FALSE, width = 5.0, height = 5.0)
+    plot(x = CVCOMBREP.synt1,
+         main = paste("Scatter plot for model #1", sep=""),
+         proj = c(1,2), splom = TRUE, boxes = TRUE,
+         steps = CVCOMBREP.synt1$cvfit$cv.nsteps,
+         pch = 16, cex = 0.5, col = 2,
+         col.box = 2, lty.box = 2, lwd.box = 1,
+         add.legend = TRUE, 
+         device = NULL, file = "Scatter Plot", path=getwd(),
+         horizontal = FALSE, width = 5.0, height = 5.0)
 }

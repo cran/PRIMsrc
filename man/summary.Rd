@@ -7,7 +7,7 @@
 \title{Summary Function}
 
 \description{
-  S3-generic summary function to summerize the main parameters used to generate the \code{PRSP} object.
+  S3-generic summary function to summarize the main parameters used to generate the \code{PRSP} object.
 }
 
 \usage{
@@ -24,7 +24,7 @@
 }
 
 \value{
-  Summerizes the main parameters used to generate its argument.
+  Summarizes the main parameters used to generate its argument.
 }
 
 \references{
@@ -65,3 +65,30 @@
 \keyword{Cross-Validation}
 \keyword{Bump Hunting}
 \keyword{Rule-Induction Method}
+
+\examples{
+    #===================================================
+    # Loading the library and its dependencies
+    #===================================================
+    library("PRIMsrc")
+
+    #=================================================================================
+    # Simulated dataset #1 (n=250, p=3)
+    # Replicated Combined Cross-Validation (RCCV)
+    # Peeling criterion = LRT
+    # Optimization criterion = LRT
+    #=================================================================================
+    CVCOMBREP.synt1 <- sbh(dataset = Synthetic.1, 
+                           cvtype = "combined", cvcriterion = "lrt",
+                           B = 1, K = 5, 
+                           vs = TRUE, cpv = FALSE, 
+                           decimals = 2, probval = 0.5, 
+                           arg = "beta=0.05,
+                                  alpha=0.1,
+                                  minn=10,
+                                  L=NULL,
+                                  peelcriterion=\"lr\"",
+                           parallel = FALSE, conf = NULL, seed = 123)
+
+    summary(object=CVCOMBREP.synt1)
+}

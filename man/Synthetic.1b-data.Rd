@@ -1,21 +1,22 @@
-\name{Synthetic.1}
+\name{Synthetic.1b}
 
 \docType{data}
 
-\alias{Synthetic.1}
+\alias{Synthetic.1b}
 
-\title{Synthetic Dataset #1: \eqn{p < n} case}
+\title{Synthetic Dataset #1b: \eqn{p < n} case}
 
 \description{
-  Dataset from simulated regression survival model #1 as described in Dazard et al. (2015).
+  Dataset from simulated regression survival model #1b as described in Dazard et al. (2015).
   Here, the regression function uses all of the predictors, which are also part of the design matrix. 
+  In this example, the signal is limited to a box-shaped region R of the predictor space. 
   Survival time was generated from an exponential model with rate parameter \eqn{\lambda} (and mean \eqn{\frac{1}{\lambda}})
   according to a Cox-PH model with hazard exp(eta), where eta(.) is the regression function.
   Censoring indicator were generated from a uniform distribution on [0, 3].
   In this synthetic example, all covariates are continuous, i.i.d. from a multivariate uniform distribution on [0, 1].
 }
 
-\usage{Synthetic.1}
+\usage{Synthetic.1b}
 
 \format{
   Each dataset consists of a \code{numeric} \code{matrix} containing \eqn{n=250} observations (samples) 
@@ -23,7 +24,7 @@
   It comes as a compressed Rda data file.
 }
 
-\source{See simulated survival model #1 in Dazard et al., 2015.}
+\source{See simulated survival model #1b in Dazard et al., 2015.}
 
 \references{
     \itemize{

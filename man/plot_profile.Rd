@@ -5,7 +5,7 @@
 \title{Visualization for Model Selection/Validation}
 
 \description{
-  Function for plotting the cross-validated profiles of a \code{PRSP} object. 
+  Function for plotting the cross-validated tuning profiles of a \code{PRSP} object. 
   It uses the user's choice of statistics among the Log Hazard Ratio (LHR), 
   Log-Rank Test (LRT) or Concordance Error Rate (CER) as a function of the model tuning parameter, 
   that is, the optimal number of peeling steps of the peeling sequence (inner loop of our PRSP algorithm).
@@ -160,7 +160,8 @@ library("PRIMsrc")
 CVCOMBREP.synt1 <- sbh(dataset = Synthetic.1, 
                        cvtype = "combined", cvcriterion = "lrt",
                        B = 1, K = 5, 
-                       vs = TRUE, cpv = FALSE, probval = 0.5, 
+                       vs = TRUE, cpv = FALSE, 
+                       decimals = 2, probval = 0.5, 
                        arg = "beta=0.05,
                               alpha=0.1,
                               minn=10,
