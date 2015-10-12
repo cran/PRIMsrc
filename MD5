@@ -1,8 +1,8 @@
-e09489a5558f802d6b4a5bcf32f06639 *DESCRIPTION
+7d5adfeda8ecd57badcb3f9bf92287f2 *DESCRIPTION
 f97ccc97e8259b63e7b4a548f3f902cc *LICENSE
 982a911015730bed71090d114e058e35 *NAMESPACE
 d760c030199bc28b77cc25ce0b76f270 *R/PRIMsrc.internal.r
-9aa4023f0117e8dd52bcac36ac6fa989 *R/PRIMsrc.r
+094be9043be71af9f3f00bd057c67337 *R/PRIMsrc.r
 59cd072ca3bd2c2d6fd19b6034cb28a3 *data/Real.1.rda
 37357accf5e2213109d0286318c48ddf *data/Real.2.rda
 3821e3e41fe2483fca574b6c0ace7e08 *data/Synthetic.1.rda
@@ -12,9 +12,9 @@ abdb8832c756ee4a94fee27926100c78 *data/Synthetic.1b.rda
 30e5df7b828d5a7c22c8265c714d9aac *data/Synthetic.4.rda
 049fd6a1883482b75caf0f407b57351a *data/datalist
 37b653a53afadce7d05982746a31c7d4 *inst/CITATION
-2995c5695b28abba654c4c7914036412 *inst/NEWS
+baac9f1e9effe98bc05a92fdb3b367fb *inst/NEWS
 1c911f113b9265b2bdfeeea9ca94e59f *inst/doc/Abstract.JCB2016.pdf
-4ff7a8453f9af1a7cdbe6cba51cb6284 *inst/doc/PRIMsrc_0.6.1.pdf
+00a5f9e077660623c0ffbfb931210001 *inst/doc/PRIMsrc_0.6.2.pdf
 e79172fd2e4d3fb824e1132e4adae7d6 *man/PrimSRC-package.Rd
 22f3feee798e6a52e1dcc1b002a4a951 *man/PrimSRC.news.Rd
 a5df34b227854d8ddf4a42d605f17a36 *man/Real.1-data.Rd
