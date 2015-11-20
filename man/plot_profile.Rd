@@ -87,7 +87,7 @@
     \code{Numeric} scalar. Width of the graphics region in inches. Defaults to 8.5.
   }
   \item{height}{
-    \code{Numeric} scalar. Height of the graphics region in inches. Defaults to 5.
+    \code{Numeric} scalar. Height of the graphics region in inches. Defaults to 5.0.
   }
   \item{\dots}{
     Generic arguments passed to other plotting functions.
@@ -95,11 +95,11 @@
 }
 
 \details{
-  Model validation is done by applying the optimization criterion on the user's choice of specific statistic.
-  The goal is to find the optimal value of the K-fold cross-validated number of steps by maximization of LHR or LRT, or minimization of CER.
+  Model tuning is done by applying the optimization criterion defined by the user's choice of specific statistic.
+  The goal is to find the optimal value of the number of steps by maximization of LHR or LRT, or minimization of CER.
   
-  Currently, this done internally for visualization purposes, but it will ultimately offer the option to do be
-  interactive with the end-user as well for parameter choosing/model selection.
+  Currently, this is done internally for visualization purposes, but it will ultimately offer the option to be done
+  interactively with the end-user as well for parameter choosing/model selection.
 }
 
 \value{
@@ -110,12 +110,16 @@
     \itemize{
         \item Dazard J-E., Choe M., LeBlanc M. and Rao J.S. (2015).
               "\emph{Cross-validation and Peeling Strategies for Survival Bump Hunting using Recursive Peeling Methods.}"
-              (Submitted).
+              Statistical Analysis and Data Mining (in press).
         \item Dazard J-E., Choe M., LeBlanc M. and Rao J.S. (2014).
               "\emph{Cross-Validation of Survival Bump Hunting by Recursive Peeling Methods.}"
               In JSM Proceedings, Survival Methods for Risk Estimation/Prediction Section. Boston, MA, USA.
               American Statistical Association IMS - JSM, p. 3366-3380.
-        \item Dazard J-E. and J. S. Rao (2010).
+        \item Dazard J-E., Choe M., LeBlanc M. and Rao J.S. (2015).
+              "\emph{R package PRIMsrc: Bump Hunting by Patient Rule Induction Method for Survival, Regression and Classification.}"
+              In JSM Proceedings, Statistical Programmers and Analysts Section. Seattle, WA, USA.
+              American Statistical Association IMS - JSM, (in press).
+        \item Dazard J-E. and J.S. Rao (2010).
               "\emph{Local Sparse Bump Hunting.}"
               J. Comp Graph. Statistics, 19(4):900-92.
     }
@@ -153,27 +157,27 @@ library("PRIMsrc")
 
 #=================================================================================
 # Simulated dataset #1 (n=250, p=3)
-# Replicated Combined Cross-Validation (RCCV)
+# Non Replicated Combined Cross-Validation (RCCV)
 # Peeling criterion = LRT
 # Optimization criterion = LRT
 #=================================================================================
-CVCOMBREP.synt1 <- sbh(dataset = Synthetic.1, 
-                       cvtype = "combined", cvcriterion = "lrt",
-                       B = 1, K = 5, 
-                       vs = TRUE, cpv = FALSE, 
-                       decimals = 2, probval = 0.5, 
-                       arg = "beta=0.05,
-                              alpha=0.1,
-                              minn=10,
-                              L=NULL,
-                              peelcriterion=\"lr\"",
-                       parallel = FALSE, conf = NULL, seed = 123)
+CVCOMB.synt1 <- sbh(dataset = Synthetic.1, 
+                    cvtype = "combined", cvcriterion = "lrt",
+                    B = 1, K = 5, 
+                    vs = TRUE, cpv = FALSE, 
+                    decimals = 2, probval = 0.5, 
+                    arg = "beta=0.05,
+                           alpha=0.1,
+                           minn=10,
+                           L=NULL,
+                           peelcriterion=\"lr\"",
+                    parallel = FALSE, conf = NULL, seed = 123)
 
-plot_profile(object = CVCOMBREP.synt1, 
-             main = "RCCV tuning profiles for model #1",
+plot_profile(object = CVCOMB.synt1, 
+             main = "Cross-validated tuning profiles for model #1",
              xlab = "Peeling Steps", ylab = "Mean Profiles",
              pch=20, col="black", lty=1, lwd=2, cex=2,
              add.sd = TRUE, add.legend = TRUE, add.profiles = TRUE,
              device = NULL, file = "Profile Plot", path=getwd(),
-             horizontal = FALSE, width = 8.5, height = 5)
+             horizontal = FALSE, width = 8.5, height = 5.0)
 }

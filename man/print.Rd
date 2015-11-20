@@ -31,12 +31,16 @@
     \itemize{
         \item Dazard J-E., Choe M., LeBlanc M. and Rao J.S. (2015).
               "\emph{Cross-validation and Peeling Strategies for Survival Bump Hunting using Recursive Peeling Methods.}"
-              (Submitted).
+              Statistical Analysis and Data Mining (in press).
         \item Dazard J-E., Choe M., LeBlanc M. and Rao J.S. (2014).
               "\emph{Cross-Validation of Survival Bump Hunting by Recursive Peeling Methods.}"
               In JSM Proceedings, Survival Methods for Risk Estimation/Prediction Section. Boston, MA, USA.
               American Statistical Association IMS - JSM, p. 3366-3380.
-        \item Dazard J-E. and J. S. Rao (2010).
+        \item Dazard J-E., Choe M., LeBlanc M. and Rao J.S. (2015).
+              "\emph{R package PRIMsrc: Bump Hunting by Patient Rule Induction Method for Survival, Regression and Classification.}"
+              In JSM Proceedings, Statistical Programmers and Analysts Section. Seattle, WA, USA.
+              American Statistical Association IMS - JSM, (in press).
+        \item Dazard J-E. and J.S. Rao (2010).
               "\emph{Local Sparse Bump Hunting.}"
               J. Comp Graph. Statistics, 19(4):900-92.
     }
@@ -67,28 +71,28 @@
 \keyword{Rule-Induction Method}
 
 \examples{
-    #===================================================
-    # Loading the library and its dependencies
-    #===================================================
-    library("PRIMsrc")
+#===================================================
+# Loading the library and its dependencies
+#===================================================
+library("PRIMsrc")
 
-    #=================================================================================
-    # Simulated dataset #1 (n=250, p=3)
-    # Replicated Combined Cross-Validation (RCCV)
-    # Peeling criterion = LRT
-    # Optimization criterion = LRT
-    #=================================================================================
-    CVCOMBREP.synt1 <- sbh(dataset = Synthetic.1, 
-                           cvtype = "combined", cvcriterion = "lrt",
-                           B = 1, K = 5, 
-                           vs = TRUE, cpv = FALSE, 
-                           decimals = 2, probval = 0.5, 
-                           arg = "beta=0.05,
-                                  alpha=0.1,
-                                  minn=10,
-                                  L=NULL,
-                                  peelcriterion=\"lr\"",
-                           parallel = FALSE, conf = NULL, seed = 123)
+#=================================================================================
+# Simulated dataset #1 (n=250, p=3)
+# Non Replicated Combined Cross-Validation (RCCV)
+# Peeling criterion = LRT
+# Optimization criterion = LRT
+#=================================================================================
+CVCOMB.synt1 <- sbh(dataset = Synthetic.1, 
+                    cvtype = "combined", cvcriterion = "lrt",
+                    B = 1, K = 5, 
+                    vs = TRUE, cpv = FALSE, 
+                    decimals = 2, probval = 0.5, 
+                    arg = "beta=0.05,
+                           alpha=0.1,
+                           minn=10,
+                           L=NULL,
+                           peelcriterion=\"lr\"",
+                    parallel = FALSE, conf = NULL, seed = 123)
 
-    print(x=CVCOMBREP.synt1)
+print(CVCOMB.synt1)
 }
