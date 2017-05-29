@@ -1,36 +1,24 @@
-\name{Real.2}
+\name{PRIMsrc.news}
 
-\docType{data}
+\alias{PRIMsrc.news}
 
-\alias{Real.2}
-
-\title{Real Dataset #2: Genomic Dataset (\eqn{p >> n} case)}
+\title{Display the \pkg{PRIMsrc} Package News}
 
 \description{
-  Publicly available lung cancer genomic data from the Chemores Cohort Study. This data is part of an integrated study 
-  of mRNA, miRNA and clinical variables to characterize the molecular distinctions between squamous cell carcinoma (SCC) 
-  and adenocarcinoma (AC) in Non Small Cell Lung Cancer (NSCLC) aside large cell lung carcinoma (LCC). Tissue samples 
-  were analysed from a cohort of 123 patients, who underwent complete surgical resection at the Institut Mutualiste 
-  Montsouris (Paris, France) between 30 January 2002 and 26 June 2006. The studied outcome was the "Disease-Free Survival Time". 
-  Patients were followed until the first relapse occurred or administrative censoring. In this genomic dataset, 
-  the expression levels of Agilent miRNA probes (\eqn{p=939}) were included from the \eqn{n=123} cohort samples. 
-  The miRNA data contains normalized expression levels. See below the paper by Lazar et al. (2013) and Array Express 
-  data repository for complete description of the samples, tissue preparation, Agilent array technology, and data normalization. 
-  In addition to the genomic data, five clinical variables, also evaluated on the cohort samples, are included as 
-  continuous variable ('Age') and nominal variables ('Type','KRAS.status','EGFR.status','P53.status'). 
-  This dataset represents a situation where the number of covariates dominates the number of complete observations, 
-  or \eqn{p >> n} case. 
+    Function to display the log file \code{NEWS} of updates of the \pkg{PRIMsrc} package.
 }
 
-\usage{Real.2}
-
-\format{
-  Dataset consists of a \code{numeric} \code{data.frame} containing \eqn{n=123} complete observations (samples) 
-  by rows and \eqn{p=939} genomic covariates by columns, not including the censoring indicator and (censored) time-to-event variables. 
-  It comes as a compressed Rda data file.
+\usage{
+    PRIMsrc.news(...)
 }
 
-\source{See real data application in Dazard et al., 2015.}
+\arguments{
+    \item{\dots}{Further arguments passed to or from other methods.}
+}
+
+\value{
+    None.
+}
 
 \author{
     \itemize{
@@ -72,17 +60,8 @@
     This project was partially funded by the National Institutes of Health NIH - National Cancer Institute (R01-CA160593) to J-E. Dazard and J.S. Rao.
 }
 
-\keyword{Real Dataset}
-\keyword{Tumor sample comparisons}
-
-\seealso{
-    \itemize{
-       Array Express data repository at the European Bioinformatics Institute.
-       Accession number: #E-MTAB-1134 (MIR).
-       \url{www.ebi.ac.uk/arrayexpress/}
-    }
-    \itemize{
-       CHEMORES Consortium and website.
-       \url{www.chemores.ki.se/index.html}
-    }
+\note{
+    End-user function. 
 }
+
+\keyword{documentation}
