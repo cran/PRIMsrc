@@ -10,7 +10,7 @@ The method generates decision rules delineating a region in the predictor space,
 The region is shaped as a hyperdimensional box or hyperrectangle that is not necessarily contiguous. Assumptions are that the multivariate input 
 variables can be discrete or continuous and the univariate response variable can be discrete (Classification), continuous (Regression) 
 or a time-to event, possibly censored (Survival). It is intended to handle low and high-dimensional multivariate datasets, 
-including the situation where the number of covariates exceeds or dominates that of samples (\eqn{p > n} or \eqn{p \gg n} paradigm).
+including the paradigm where the number of covariates (_p_) exceeds or dominates that of samples (_n_): _p_ > _n_ or _p_ >> _n_.
 
 The current version is a development release that only implements the case of a survival response. At this point, this version is also restricted 
 to a directed peeling search of the first box covered by the recursive coverage (outer) loop of our Patient Recursive Survival Peeling (PRSP) algorithm 
@@ -31,8 +31,8 @@ The returned S3-class `sbh` object contains cross-validated estimates of all the
 at each iteration of the peeling sequence (inner loop of the PRSP algorithm). This enables the graphical display of results of profiling curves for model selection/tuning, 
 peeling trajectories, covariate traces and survival distributions (see companion papers Dazard et al., 2014, 2015, 2016 for details). 
 
-The package `PRIMsrc` offers a number of options for the number of replications of the fitting procedure to be perfomed: \eqn{B}; 
-the type of \eqn{K}-fold cross-validation desired: (replicated)-averaged or-combined; as well as the peeling and cross-validation critera 
+The package `PRIMsrc` offers a number of options for the number of replications of the fitting procedure to be perfomed: _B_; 
+the type of _K_-fold cross-validation desired: (replicated)-averaged or-combined; as well as the peeling and cross-validation critera 
 for model selection/tuning, and a few more parameters for the PRSP algorithm. The package takes advantage of the 
 R packages `parallel` and `snow`, which allows users to create a parallel backend within an R session, enabling access to a cluster 
 of compute cores and/or nodes on a local and/or remote machine(s) with either. 
@@ -42,10 +42,12 @@ The package supports two types of communication mechanisms between master and wo
 ============
 ### Branches
 
-This branch (master) is the  default one, that hosts the current development release (version 0.7.0) of the survival bump hunting procedure that implements the case of a survival response. 
+This branch (master) is the  default one, that hosts the current development release (version 0.7.1) of the survival bump hunting procedure 
+that implements the case of a survival response. Note that `PRIMsrc` is still a non-production release and that version 0.7.1 implements 
+significant user-visible changes. Check details of new features, changes, and bug fixes in the "Usage" section below.
 
 The second branch (unified) will host the future complete version of the code (version 1.0.0), including undirected peeling search derived from the 
-Patient Rule Induction Method (PRIM), that will allow the unified treatment of bump hunting for every type of common response: Survival, Regression and Classification (SRC).
+Patient Rule Induction Method (PRIM), and unified treatment of bump hunting for every type of common response: Survival, Regression and Classification (SRC).
 
 
 ===========
@@ -73,7 +75,7 @@ CRAN downloads in the last week:
 ================
 ### Requirements
 
-PRIMsrc 0.7.0 requires R-3.0.2 (2013-09-25). It was built and tested under R version 3.4.0 (2017-04-21) and Travis CI. 
+PRIMsrc (>= 0.7.1) requires R-3.0.2 (2013-09-25). It was built and tested under R version 3.4.0 (2017-04-21) and Travis CI. 
 
 Installation has been tested on Windows, Linux, OSX and Solaris platforms. 
 
@@ -87,13 +89,15 @@ See CRAN checks:
 ================
 ### Installation
 
-* To install [`PRIMsrc` from CRAN repository](https://CRAN.R-project.org/package=PRIMsrc), simply download and install the current version (0.7.0) from the CRAN repository:
+* To install the stable version (0.7.1) of `PRIMsrc` from the [CRAN](https://CRAN.R-project.org/package=PRIMsrc) repository, 
+simply download and install the current version (0.7.1) from the CRAN repository:
 
 ```{r}
 install.packages("PRIMsrc")
 ```
 
-* Alternatively, you can install the most up-to-date development version (>= 0.7.0) of [`PRIMsrc` from GitHub repository](https://github.com/jedazard/PRIMsrc) using devtools, simply run:
+* Alternatively, you can install the most up-to-date development version (>= 0.7.1) of `PRIMsrc` from the [GitHub](https://github.com/jedazard/PRIMsrc) repository, 
+simply run the following using devtools:
 
 ```{r}
 install.packages("devtools")
@@ -110,8 +114,7 @@ devtools::install_github("jedazard/PRIMsrc")
 library("PRIMsrc")
 ```
 
-* Version 0.7.0 is a major release with significant user-visible changes.
-Check details of new features, changes, and bug fixes with the following R command:
+* Check details of new features, changes, and bug fixes with the following R command:
 
 ```{r}
 PRIMsrc.news()
@@ -156,6 +159,12 @@ Funding/Provision/Help:
    + Dazard J-E. and Rao J.S. 
       *Variable Selection Strategies for High-Dimensional Survival Bump Hunting using Recursive Peeling Methods*. 
       [submitted (2017)].
+      
+   + Diaz D.A., Dazard J-E. and Rao J.S. 
+     *Unsupervised Bump Hunting Using Principal Components*. 
+     In: Ahmed SE, editor. Big and Complex Data Analysis: Methodologies and Applications. 
+     Contributions to Statistics, vol. Edited Refereed Volume. 
+     [Springer International Publishing, Cham Switzerland (2017)](https://link.springer.com/chapter/10.1007/978-3-319-41573-4_16), 325-345.
       
    + Yi C. and Huang J.
       *Semismooth Newton Coordinate Descent Algorithm for Elastic-Net Penalized Huber Loss Regression and Quantile Regression*. 

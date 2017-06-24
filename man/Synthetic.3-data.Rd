@@ -10,7 +10,7 @@
   Dataset from simulated regression survival model #3 as described in Dazard et al. (2015). 
   Here, the regression function does not include any of the predictors. 
   This means that none of the covariates is informative (noisy), and are not part of the design matrix. 
-  Survival time was generated from an exponential model with rate parameter \eqn{\lambda} (and mean \eqn{\frac{1}{\lambda}})
+  Survival time was generated from an exponential model with rate parameter \eqn{\lambda} (and mean 1/\eqn{\lambda})
   according to a Cox-PH model with hazard exp(eta), where eta(.) is the regression function.
   Censoring indicator were generated from a uniform distribution on [0, 3].
   In this synthetic example, all covariates are continuous, i.i.d. from a multivariate uniform distribution on [0, 1].
@@ -41,6 +41,11 @@
         \item Dazard J-E. and Rao J.S. (2017).
               "\emph{Variable Selection Strategies for High-Dimensional Survival Bump Hunting using Recursive Peeling Methods.}"
               (in prep).
+        \item Diaz-Pachon D.A., Dazard J-E. and Rao J.S. (2017).
+              "\emph{Unsupervised Bump Hunting Using Principal Components.}"           
+              In: Ahmed SE, editor. Big and Complex Data Analysis: Methodologies and Applications. 
+              Contributions to Statistics, vol. Edited Refereed Volume. 
+              Springer International Publishing, Cham Switzerland, p. 325-345.
         \item Yi C. and Huang J. (2016).
               "\emph{Semismooth Newton Coordinate Descent Algorithm for Elastic-Net Penalized Huber Loss Regression and Quantile Regression}."
               J. Comp Graph. Statistics, DOI: 10.1080/10618600.2016.1256816.

@@ -19,7 +19,8 @@
   In addition to the genomic data, five clinical variables, also evaluated on the cohort samples, are included as 
   continuous variable ('Age') and nominal variables ('Type','KRAS.status','EGFR.status','P53.status'). 
   This dataset represents a situation where the number of covariates dominates the number of complete observations, 
-  or \eqn{p >> n} case. 
+  or \eqn{p >> n} case.  See Lazar et al. (2013) and the \href{http://www.chemores.ki.se/index.html}{CHEMORES Consortium} 
+  website for more details.
 }
 
 \usage{Real.2}
@@ -47,6 +48,11 @@
         \item Dazard J-E. and Rao J.S. (2017).
               "\emph{Variable Selection Strategies for High-Dimensional Survival Bump Hunting using Recursive Peeling Methods.}"
               (in prep).
+        \item Diaz-Pachon D.A., Dazard J-E. and Rao J.S. (2017).
+              "\emph{Unsupervised Bump Hunting Using Principal Components.}"           
+              In: Ahmed SE, editor. Big and Complex Data Analysis: Methodologies and Applications. 
+              Contributions to Statistics, vol. Edited Refereed Volume. 
+              Springer International Publishing, Cham Switzerland, p. 325-345.
         \item Yi C. and Huang J. (2016).
               "\emph{Semismooth Newton Coordinate Descent Algorithm for Elastic-Net Penalized Huber Loss Regression and Quantile Regression}."
               J. Comp Graph. Statistics, DOI: 10.1080/10618600.2016.1256816.
@@ -64,6 +70,9 @@
         \item Dazard J-E. and J.S. Rao (2010).
               "\emph{Local Sparse Bump Hunting.}"
               J. Comp Graph. Statistics, 19(4):900-92.
+        \item Lazar V. et al. (2013).
+               "\emph{Integrated molecular portrait of non-small cell lung cancers.}"
+              BMC Medical Genomics 6:53-65.
     }
 }
 
@@ -78,11 +87,9 @@
 \seealso{
     \itemize{
        Array Express data repository at the European Bioinformatics Institute.
-       Accession number: #E-MTAB-1134 (MIR).
-       \url{www.ebi.ac.uk/arrayexpress/}
+       Accession number: #E-MTAB-1134 (MIR): \url{www.ebi.ac.uk/arrayexpress/}
     }
     \itemize{
-       CHEMORES Consortium and website.
-       \url{www.chemores.ki.se/index.html}
+       CHEMORES Consortium website: \url{http://www.chemores.ki.se/index.html}
     }
 }
