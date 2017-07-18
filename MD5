@@ -1,9 +1,9 @@
-ac8687fc2908a573eb39f8019a65d9c5 *DESCRIPTION
+71d88530ae8ba8a1d22cc5178c27c9b8 *DESCRIPTION
 15fcfc3ba60b801bae38cb778971383a *LICENSE
 aa3192bb22357e2634e127dff0ab7452 *NAMESPACE
-a3e4f56ef5c5bada07f9b139c7aae34e *R/PRIMsrc.internal.r
-01cf904b1dcd2693c3f544b8c95c82eb *R/PRIMsrc.r
-1b7e68dd1db0e6aefb70f434e4a825a2 *README.md
+326e999cab5d5184ad42a84499c1b828 *R/PRIMsrc.internal.r
+e5f622e748affc9d5fbd9020c7530d37 *R/PRIMsrc.r
+a9db732f2110bfd79a5cd04c71a1e094 *README.md
 ef2914550c4952d45af268291082d8b1 *data/Real.1.rda
 af16680b837ae7464eeda6ec70492097 *data/Real.2.rda
 54f9bd1c34d18e83c1f37cdfdc09537b *data/Synthetic.1.rda
@@ -13,8 +13,8 @@ e0a643a51972521c3affccf8c40d0518 *data/Synthetic.1b.rda
 5a9253e1d27d7d017e9d25539611c2b3 *data/Synthetic.4.rda
 bca829a07579429f19aed6192b3fbe88 *data/datalist
 96cf15ef19015ad385949c062aaba8d3 *inst/CITATION
-460bd68c6e7b944223f49bdb302c34f1 *inst/NEWS
-5b10a1b15de7c906a7d6525cbe39cc88 *inst/doc/PRIMsrc_0.7.1.pdf
+30d9c335137c1b14efb2c4df8f30adc7 *inst/NEWS
+34d9f1f24edbd85f4ec6b3b1375080df *inst/doc/PRIMsrc_0.7.2.pdf
 ea331bf15fcc4a9fa75b27050f805420 *man/PRIMsrc-package.Rd
 c77f0ab45b55e38e4b94d91d336cb84c *man/PRIMsrc.news.Rd
 a67295ea3494679b8020d8a933ed5de5 *man/Real.1-data.Rd

@@ -1,8 +1,8 @@
 Package: PRIMsrc
 Type: Package
 Title: PRIM Survival Regression Classification
-Version: 0.7.1
-Date: 2017-06-24
+Version: 0.7.2
+Date: 2017-07-18
 Authors@R: c(person("Jean-Eudes", "Dazard",
                     role = c("aut", "cre"),
                     email = "jean-eudes.dazard@case.edu"),
@@ -27,5 +27,5 @@ License: GPL (>= 3) | file LICENSE
 LazyLoad: yes
 LazyData: yes
 Archs: i386, x64
-Packaged: 2017-06-24 16:02:42 UTC; Admin
-Date/Publication: 2017-06-24 21:40:56 UTC
+Packaged: 2017-07-18 14:19:58 UTC; Admin
+Date/Publication: 2017-07-18 17:22:15 UTC
