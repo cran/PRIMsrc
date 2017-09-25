@@ -20,7 +20,6 @@
 #                             vstype,
 #                             vsarg,
 #                             cv,
-#                             cvtype,
 #                             onese,
 #                             parallel.vs,
 #                             parallel.rep,
@@ -52,7 +51,6 @@ cv.presel <- function(X,
                       vstype,
                       vsarg,
                       cv,
-                      cvtype,
                       onese,
                       parallel.vs,
                       parallel.rep,
@@ -61,9 +59,8 @@ cv.presel <- function(X,
                       verbose,
                       seed) {
 
-   # Parsing and evaluating 'vsarg' parameters to evaluate 'vscons'
-   vscons <- NULL
-   eval(parse( text=unlist(strsplit(x=vsarg, split=",")) ))
+   # Parsing and evaluating all 'vsarg' parameters
+   eval(parse(text = unlist(strsplit(x = vsarg, split = ","))))
 
    # Treatment of variable screening
    if (vs) {
@@ -119,149 +116,125 @@ cv.presel <- function(X,
             CV.type.presel.obj$boxstat.mean[[b]] <- obj.cl[[b]]$boxstat.mean
             CV.type.presel.obj$success[b] <- obj.cl[[b]]$success
          }
+         CV.type.presel.obj$vsarg <- obj.cl[[1]]$vsarg
       }
-
       # Collect the results from all replicates
+      vsarg <- CV.type.presel.obj$vsarg
       varsel.list <- CV.type.presel.obj$varsel
       varsign.list <- CV.type.presel.obj$varsign
       boxstat.profile.list <- CV.type.presel.obj$boxstat.mean
       success <-  any(CV.type.presel.obj$success)
+
+      # Parsing 'vsarg' to retrieve 'cvcriterion', 'M', 'msize, and 'vscons'
+      if (vstype == "prsp") {
+         cvcriterion <- vsarg$cvcriterion
+      }
+      msize <- vsarg$msize
+      M <- length(msize)
+      vscons <- vsarg$vscons
 
       # Get the fitted model
       if (!success) {
          # Failed to select any covariates
          varsel <- NA
          varsign <- NA
-         boxstat.profile <- NULL
-         boxstat.mean <- NULL
-         boxstat.se <- NULL
-         boxstat.opt <- NULL
-         boxstat.1se <- NULL
+         if (vstype == "prsp") {
+            boxstat.profile <- matrix(data=NA, nrow=B, ncol=M)
+            colnames(boxstat.profile) <- paste("msize=", msize, sep="")
+            boxstat.mean <- rep(NA, M)
+            boxstat.se <- rep(NA, M)
+            names(boxstat.mean) <- paste("msize=", msize, sep="")
+            names(boxstat.se) <- paste("msize=", msize, sep="")
+         } else {
+            boxstat.profile <- NA
+            boxstat.mean <- NA
+            boxstat.se <- NA
+         }
+         boxstat.opt <- NA
+         boxstat.1se <- NA
          success <- FALSE
       } else {
          # Get the averaged CV profiles of screening criterion for each PRSP model from all replicates
          if (vstype == "prsp") {
-            # Parsing and evaluating 'vsarg' parameters to evaluate 'cvcriterion', 'L' and 'S'
-            alpha <- NULL
-            beta <- NULL
-            minn <- NULL
-            L <- NULL
-            S <- NULL
-            peelcriterion <- NULL
-            cvcriterion <- NULL
-            vscons <- NULL
-            eval(parse( text=unlist(strsplit(x=vsarg, split=",")) ))
-            # Grid of cardinals of top-ranked variables subsets
-            n <- nrow(X)
-            p <- ncol(X)
-            Lmax <- ceiling(log(1/n) / log(1 - (1/n)))
-            if (!is.null(L)) {
-               L <- max(1,floor(L))
-               if (L > Lmax) {
-                  L <- min(Lmax, L)
-               }
-            }
-            Smax <- max(1,floor(p))
-            if (!is.null(S)) {
-               S <- max(1,floor(S))
-               if (S > Smax) {
-                  S <- min(Smax, S)
-               }
-               size <- S
-            } else {
-               S <- max(1,floor(p/5))
-               size <- unique(ceiling(seq(from=max(1,floor(S/100)), to=S, length=min(S,floor(100*S/p)))))
-            }
-            M <- length(size)
             # Get the averaged CV profiles
-            if (!cv) {
-               boxstat.profile <- matrix(data=NA, nrow=B, ncol=M)
-               boxstat.mean <- rep(NA, M)
-               boxstat.se <- rep(NA, M)
-               boxstat.opt <- NA
-               boxstat.1se <- NA
-            } else if ((cvtype == "averaged") || (cvtype == "combined")) {
-               boxstat.profile <- list2mat(list=boxstat.profile.list, fill=NA, coltrunc=M)
-               colnames(boxstat.profile) <- paste("size=", size, sep="")
-               boxstat.mean <- rep(NA, M)
-               boxstat.se <- rep(NA, M)
-               names(boxstat.mean) <- paste("size=", size, sep="")
-               names(boxstat.se) <- paste("size=", size, sep="")
-               if (cvcriterion == "lhr") {
-                  for (m in 1:M) {
-                     sumlhr <- rep(x=NA, times=B)
-                     for (b in 1:B) {
-                        sumlhr[b] <- boxstat.profile.list[[b]][[m]]
-                     }
-                     boxstat.mean[m] <- mean(sumlhr, na.rm=TRUE)
-                     boxstat.se[m] <- sd(sumlhr, na.rm=TRUE)
+            boxstat.profile <- list2mat(list=boxstat.profile.list, fill=NA, coltrunc=M)
+            colnames(boxstat.profile) <- paste("msize=", msize, sep="")
+            boxstat.mean <- rep(NA, M)
+            boxstat.se <- rep(NA, M)
+            names(boxstat.mean) <- paste("msize=", msize, sep="")
+            names(boxstat.se) <- paste("msize=", msize, sep="")
+            if (cvcriterion == "lhr") {
+               for (m in 1:M) {
+                  sumlhr <- rep(x=NA, times=B)
+                  for (b in 1:B) {
+                     sumlhr[b] <- boxstat.profile.list[[b]][[m]]
                   }
-                  if (all(is.na(boxstat.mean)) || is.empty(boxstat.mean)) {
-                     boxstat.opt <- NA
-                     boxstat.1se <- NA
-                  } else {
-                     boxstat.opt <- which.max(boxstat.mean)
-                     w <- boxstat.mean >= boxstat.mean[boxstat.opt]-boxstat.se[boxstat.opt]
-                     if (all(is.na(w)) || is.empty(w)) {
-                        boxstat.1se <- NA
-                     } else {
-                        boxstat.1se <- min(which(w))
-                     }
-                  }
-               } else if (cvcriterion == "lrt") {
-                  for (m in 1:M) {
-                     sumlrt <- rep(x=NA, times=B)
-                     for (b in 1:B) {
-                        sumlrt[b] <- boxstat.profile.list[[b]][[m]]
-                     }
-                     boxstat.mean[m] <- mean(sumlrt, na.rm=TRUE)
-                     boxstat.se[m] <- sd(sumlrt, na.rm=TRUE)
-                  }
-                  if (all(is.na(boxstat.mean)) || is.empty(boxstat.mean)) {
-                     boxstat.opt <- NA
-                     boxstat.1se <- NA
-                  } else {
-                     boxstat.opt <- which.max(boxstat.mean)
-                     w <- boxstat.mean >= boxstat.mean[boxstat.opt]-boxstat.se[boxstat.opt]
-                     if (all(is.na(w)) || is.empty(w)) {
-                        boxstat.1se <- NA
-                     } else {
-                        boxstat.1se <- min(which(w))
-                     }
-                  }
-               } else if (cvcriterion == "cer") {
-                  for (m in 1:M) {
-                     sumcer <- rep(x=NA, times=B)
-                     for (b in 1:B) {
-                        sumcer[b] <- boxstat.profile.list[[b]][[m]]
-                     }
-                     boxstat.mean[m] <- mean(sumcer, na.rm=TRUE)
-                     boxstat.se[m] <- sd(sumcer, na.rm=TRUE)
-                  }
-                  if (all(is.na(boxstat.mean)) || is.empty(boxstat.mean)) {
-                     boxstat.opt <- NA
-                     boxstat.1se <- NA
-                  } else {
-                     boxstat.opt <- which.min(boxstat.mean)
-                     w <- boxstat.mean <= boxstat.mean[boxstat.opt]+boxstat.se[boxstat.opt]
-                     if (all(is.na(w)) || is.empty(w)) {
-                        boxstat.1se <- NA
-                     } else {
-                        boxstat.1se <- min(which(w))
-                     }
-                  }
+                  boxstat.mean[m] <- mean(sumlhr, na.rm=TRUE)
+                  boxstat.se[m] <- sd(sumlhr, na.rm=TRUE)
+               }
+               if (all(is.na(boxstat.mean)) || is.empty(boxstat.mean)) {
+                  boxstat.opt <- NA
+                  boxstat.1se <- NA
                } else {
-                  stop("Invalid CV criterion option. Exiting ... \n\n")
+                  boxstat.opt <- which.max(boxstat.mean)
+                  w <- boxstat.mean >= boxstat.mean[boxstat.opt]-boxstat.se[boxstat.opt]
+                  if (all(is.na(w)) || is.empty(w)) {
+                     boxstat.1se <- NA
+                  } else {
+                     boxstat.1se <- min(which(w))
+                  }
+               }
+            } else if (cvcriterion == "lrt") {
+               for (m in 1:M) {
+                  sumlrt <- rep(x=NA, times=B)
+                  for (b in 1:B) {
+                     sumlrt[b] <- boxstat.profile.list[[b]][[m]]
+                  }
+                  boxstat.mean[m] <- mean(sumlrt, na.rm=TRUE)
+                  boxstat.se[m] <- sd(sumlrt, na.rm=TRUE)
+               }
+               if (all(is.na(boxstat.mean)) || is.empty(boxstat.mean)) {
+                  boxstat.opt <- NA
+                  boxstat.1se <- NA
+               } else {
+                  boxstat.opt <- which.max(boxstat.mean)
+                  w <- boxstat.mean >= boxstat.mean[boxstat.opt]-boxstat.se[boxstat.opt]
+                  if (all(is.na(w)) || is.empty(w)) {
+                     boxstat.1se <- NA
+                  } else {
+                     boxstat.1se <- min(which(w))
+                  }
+               }
+            } else if (cvcriterion == "cer") {
+               for (m in 1:M) {
+                  sumcer <- rep(x=NA, times=B)
+                  for (b in 1:B) {
+                     sumcer[b] <- boxstat.profile.list[[b]][[m]]
+                  }
+                  boxstat.mean[m] <- mean(sumcer, na.rm=TRUE)
+                  boxstat.se[m] <- sd(sumcer, na.rm=TRUE)
+               }
+               if (all(is.na(boxstat.mean)) || is.empty(boxstat.mean)) {
+                  boxstat.opt <- NA
+                  boxstat.1se <- NA
+               } else {
+                  boxstat.opt <- which.min(boxstat.mean)
+                  w <- boxstat.mean <= boxstat.mean[boxstat.opt]+boxstat.se[boxstat.opt]
+                  if (all(is.na(w)) || is.empty(w)) {
+                     boxstat.1se <- NA
+                  } else {
+                     boxstat.1se <- min(which(w))
+                  }
                }
             } else {
-               stop("Invalid CV type option. Exiting ... \n\n")
+               stop("Invalid CV criterion option. Exiting ... \n\n")
             }
          } else {
-            boxstat.profile <- NULL
-            boxstat.mean <- NULL
-            boxstat.se <- NULL
-            boxstat.opt <- NULL
-            boxstat.1se <- NULL
+            boxstat.profile <- NA
+            boxstat.mean <- NA
+            boxstat.se <- NA
+            boxstat.opt <- NA
+            boxstat.1se <- NA
          }
          # Get the selected covariates with their signs from all replicates for the selected model
          sel.l <- unlist(varsel.list)
@@ -309,32 +282,26 @@ cv.presel <- function(X,
                varsign <- varsign[ord]
             }
          }
-         if (vstype == "prsp") {
-            if (all(is.na(varsel))) {
-               varsel <- NA
-               varsign <- NA
+         if (all(is.na(varsel))) {
+            varsel <- NA
+            varsign <- NA
+            if (vstype == "prsp") {
                boxstat.profile <- matrix(data=NA, nrow=B, ncol=M)
+               colnames(boxstat.profile) <- paste("msize=", msize, sep="")
                boxstat.mean <- rep(NA, M)
                boxstat.se <- rep(NA, M)
-               boxstat.opt <- NA
-               boxstat.1se <- NA
-               success <- FALSE
+               names(boxstat.mean) <- paste("msize=", msize, sep="")
+               names(boxstat.se) <- paste("msize=", msize, sep="")
             } else {
-               success <- TRUE
+               boxstat.profile <- NA
+               boxstat.mean <- NA
+               boxstat.se <- NA
             }
+            boxstat.opt <- NA
+            boxstat.1se <- NA
+            success <- FALSE
          } else {
-            if (all(is.na(varsel))) {
-               varsel <- NA
-               varsign <- NA
-               boxstat.profile <- NULL
-               boxstat.mean <- NULL
-               boxstat.se <- NULL
-               boxstat.opt <- NULL
-               boxstat.1se <- NULL
-               success <- FALSE
-            } else {
-               success <- TRUE
-            }
+            success <- TRUE
          }
       }
 
@@ -345,6 +312,16 @@ cv.presel <- function(X,
       if (!is.null(seed)) {
          set.seed(seed)
       }
+
+      n <- nrow(X)
+      p <- ncol(X)
+
+      # Maximum Model Size
+      msize <- p
+      M <- length(msize)
+
+      # Returning argument `vsarg` of variable selection parameters
+      vsarg <- list(NA)
 
       # Determination of directions of peeling of all covariates
       if (cv) {
@@ -385,15 +362,16 @@ cv.presel <- function(X,
          names(varsign) <- colnames(X)
          success <- TRUE
       }
-      boxstat.profile <- NULL
-      boxstat.mean <- NULL
-      boxstat.se <- NULL
-      boxstat.opt <- NULL
-      boxstat.1se <- NULL
+      boxstat.profile <- matrix(data=NA, nrow=B, ncol=M)
+      boxstat.mean <- rep(NA, M)
+      boxstat.se <- rep(NA, M)
+      boxstat.opt <- NA
+      boxstat.1se <- NA
 
    }
 
-   return(list("varsel"=varsel,
+   return(list("vsarg"=vsarg,
+               "varsel"=varsel,
                "varsign"=varsign,
                "boxstat.profile"=boxstat.profile,
                "boxstat.mean"=boxstat.mean,
@@ -562,7 +540,8 @@ cv.type.presel <- function(X,
 
    }
 
-   return(list("varsel"=varsel,
+   return(list("vsarg"=CVSEL$vsarg,
+               "varsel"=varsel,
                "varsign"=varsign,
                "boxstat.mean"=boxstat.mean,
                "success"=success,
@@ -590,49 +569,51 @@ cv.prsp <- function(X,
                     verbose,
                     seed) {
 
-   # Parsing and evaluating 'vsarg' parameters to evaluate 'cvcriterion', 'vscons', 'L' and 'S'
+   n <- nrow(X)
+   p <- ncol(X)
+
+   # Parsing and evaluating 'vsarg' argument to evaluate all parameters
    alpha <- NULL
    beta <- NULL
-   minn <- NULL
-   L <- NULL
-   S <- NULL
+   msize <- NULL
    peelcriterion <- NULL
    cvcriterion <- NULL
    vscons <- NULL
    eval(parse( text=unlist(strsplit(x=vsarg, split=",")) ))
 
-   # Grid of cardinals of top-ranked variables subsets
-   n <- nrow(X)
-   p <- ncol(X)
-   Lmax <- ceiling(log(1/n) / log(1 - (1/n)))
-   if (!is.null(L)) {
-      L <- max(1,floor(L))
-      if (L > Lmax) {
-         L <- min(Lmax, L)
-         cat("Warning: Parameter `L` was greater than the allowed range and was reset to ", Lmax, ".\n\n", sep="")
-      }
-   }
-   Smax <- max(1,floor(p))
-   if (!is.null(S)) {
-      S <- max(1,floor(S))
-      if (S > Smax) {
-         S <- min(Smax, S)
-         cat("Warning: Parameter `S` was greater than the allowed range and was reset to ", Smax, ".\n\n", sep="")
-      }
-      size <- S
+   if (is.null(msize)) {
+      cv <- TRUE
    } else {
-      S <- max(1,floor(p/5))
-      size <- unique(ceiling(seq(from=max(1,floor(S/100)), to=S, length=min(S,floor(100*S/p)))))
+      cv <- FALSE
    }
-   M <- length(size)
 
-   # Creating argument `arg` of `cv.prsp.tune` for variable selection parameters
-   arg <- paste("alpha=", alpha,
-                ",beta=", beta,
-                ",minn=", minn,
-                ",L=", ifelse(test=is.null(L), yes="NULL", no=L),
-                ",peelcriterion=\"", peelcriterion, "\"",
-                ",cvcriterion=\"", cvcriterion, "\"", sep="")
+   # Maximal possible number of peeling steps
+   Lmax <- ceiling(log(beta) / log(1 - alpha))
+
+  # Maximum Model Size or Vector of Model Sizes
+   if (!is.null(msize)) {
+      if (msize < 1) {
+         cat("Warning: Parameter `msize` was less than the minimal allowed value and was reset to ", 1, ".\n", sep="")
+      }
+      msize <- max(1,floor(msize))
+      Smax <- max(1,floor(p))
+      if (msize > Smax) {
+         cat("Warning: Parameter `msize` was greater than the maximal allowed vale and was reset to ", Smax, ".\n", sep="")
+      }
+      msize <- min(Smax, msize)
+   } else {
+      Smax <- max(1,floor(p/5))
+      msize <- unique(ceiling(seq(from=max(1,floor(Smax/100)), to=Smax, length=min(msize,floor(100*Smax/p)))))
+      cat("Models sizes to be explored by cross-validation: ", msize, "\n", sep=" ")
+   }
+   M <- length(msize)
+
+   # Creating argument `cvarg` of `cv.prsp.tune` for variable selection parameters
+   cvarg <- paste("alpha=", alpha,
+                  ",beta=", beta,
+                  ",L=", Lmax,
+                  ",peelcriterion=\"", peelcriterion, "\"",
+                  ",cvcriterion=\"", cvcriterion, "\"", sep="")
 
    if (!is.null(seed)) {
       set.seed(seed)
@@ -648,7 +629,7 @@ cv.prsp <- function(X,
    boxstat.list <- vector(mode="list", length=K)
    k <- 1
    while (k <= K) {
-      if (verbose) cat("Fold : ", k, "\n", sep="")
+      if ((verbose) && (cv)) cat("Fold : ", k, "\n", sep="")
       # Initialize training and test data
       if (K == 1) {
          traindata <- testdata <- X[folds$perm[(folds$which == k)], , drop=FALSE]
@@ -670,20 +651,20 @@ cv.prsp <- function(X,
                                 testdata=testdata,
                                 testtime=testtime,
                                 teststatus=teststatus,
-                                arg=arg,
-                                size=size,
+                                cvarg=cvarg,
+                                msize=msize,
                                 parallel=parallel,
                                 verbose=verbose)
       } else {
          clusterSetRNGStream(cl=clus, iseed=seed)
-         obj.cl <- clusterApply(cl=clus, x=size, fun=cv.prsp.tune,
+         obj.cl <- clusterApply(cl=clus, x=msize, fun=cv.prsp.tune,
                                 traindata=traindata,
                                 traintime=traintime,
                                 trainstatus=trainstatus,
                                 testdata=testdata,
                                 testtime=testtime,
                                 teststatus=teststatus,
-                                arg=arg,
+                                cvarg=cvarg,
                                 parallel=parallel,
                                 verbose=verbose)
          cv.obj <- list("varsel"=vector(mode="list", length=M),
@@ -718,13 +699,12 @@ cv.prsp <- function(X,
       boxstat.mean <- rep(NA, M)
       boxstat.opt <- NA
       boxstat.1se <- NA
+      msize <- NA
       success <- FALSE
    } else {
       # Get the averaged CV profiles of screening criterion for each model from all folds
       boxstat.mean <- rep(NA, M)
       boxstat.se <- rep(NA, M)
-      names(boxstat.mean) <- paste("size=", size, sep="")
-      names(boxstat.se) <- paste("size=", size, sep="")
       if (cvcriterion == "lhr") {
          for (m in 1:M) {
             sumlhr <- rep(x=NA, times=K)
@@ -794,8 +774,6 @@ cv.prsp <- function(X,
       # Get the selected covariates with their signs from all folds for each model
       varsel <- vector(mode="list", length=M)
       varsign <- vector(mode="list", length=M)
-      names(varsel) <- paste("size=", size, sep="")
-      names(varsign) <- paste("size=", size, sep="")
       for (m in 1:M) {
          sel.m <- numeric(0)
          sign.m <- numeric(0)
@@ -854,6 +832,7 @@ cv.prsp <- function(X,
          boxstat.opt <- NA
          boxstat.1se <- NA
          success <- FALSE
+         msize <- NA
       } else {
          if (onese) {
             varsel <- varsel[[boxstat.1se]]
@@ -866,7 +845,16 @@ cv.prsp <- function(X,
       }
    }
 
-   return(list("varsel"=varsel,
+   # Returning updated argument `vsarg` of variable selection parameters
+   vsarg <- list("alpha"=alpha,
+                 "beta"=beta,
+                 "peelcriterion"=peelcriterion,
+                 "cvcriterion"=cvcriterion,
+                 "vscons"=vscons,
+                 "msize"=msize)
+
+   return(list("vsarg"=vsarg,
+               "varsel"=varsel,
                "varsign"=varsign,
                "boxstat.mean"=boxstat.mean,
                "boxstat.opt"=boxstat.opt,
@@ -889,43 +877,32 @@ cv.prsp.tune <- function(traindata,
                          testdata,
                          testtime,
                          teststatus,
-                         arg,
-                         size,
+                         cvarg,
+                         msize,
                          parallel,
                          verbose) {
 
    # Parsing and evaluating 'arg' parameters to evaluate 'cvcriterion'
    alpha <- NULL
    beta <- NULL
-   minn <- NULL
    L <- NULL
    peelcriterion <- NULL
    cvcriterion <- NULL
-   eval(parse( text=unlist(strsplit(x=arg, split=",")) ))
-
-   # Creating argument `arg` of PRSP parameters
-   arg <- paste("alpha=", alpha,
-                ",beta=", beta,
-                ",minn=", minn,
-                ",L=", ifelse(test=is.null(L), yes="NULL", no=L),
-                ",peelcriterion=\"", peelcriterion, "\"", sep="")
+   eval(parse( text=unlist(strsplit(x=cvarg, split=",")) ))
 
    if (!parallel) {
 
-      M <- length(size)
+      M <- length(msize)
       varsel <- vector(mode="list", length=M)
       varsign <- vector(mode="list", length=M)
-      varcut <- vector(mode="list", length=M)
       boxstat <- vector(mode="list", length=M)
+      peelobj <- cv.prsp.univ(traindata=traindata,
+                              traintime=traintime,
+                              trainstatus=trainstatus,
+                              cvarg=cvarg)
       m <- 1
       while (m <= M) {
-         if (verbose) cat("Model: ", m, "\n")
-         peelobj <- cv.prsp.univ(traindata=traindata,
-                                 traintime=traintime,
-                                 trainstatus=trainstatus,
-                                 arg=arg,
-                                 size=size[m],
-                                 verbose=verbose)
+         if (verbose) cat("Model Size: ", msize[m], "\n")
          if (is.empty(peelobj$varsel)) {
             success <- FALSE
             varsel <- NULL
@@ -935,13 +912,13 @@ cv.prsp.tune <- function(traindata,
          } else {
             success <- TRUE
             # Retrieving screened variables and box from the univariate screening
-            varsel[[m]] <- peelobj$varsel
-            varsign[[m]] <- peelobj$varsign
-            varcut[[m]] <- peelobj$varcut
+            varsel[[m]] <- peelobj$varsel[1:msize[m]]
+            varsign[[m]] <- peelobj$varsign[1:msize[m]]
             # Extract the rule and sign as one vector
+            varcut <- peelobj$varcut[1:msize[m]]
             test.cut <- t(t(testdata[,varsel[[m]], drop=FALSE]) * varsign[[m]])
-            test.ind <- t(t(test.cut) >= varcut[[m]] * varsign[[m]])
-            # Set as TRUE which test observations are TRUE for all covariates
+            test.ind <- t(t(test.cut) >= varcut * varsign[[m]])
+            # Select which test observations are `TRUE` for all screened covariates
             pred <- (rowMeans(test.ind) == 1)
             test.ind1 <- 1*pred
             if ((sum(pred, na.rm=TRUE) != length(pred[!is.na(pred)])) && (sum(pred, na.rm=TRUE) != 0)) {
@@ -978,9 +955,7 @@ cv.prsp.tune <- function(traindata,
       peelobj <- cv.prsp.univ(traindata=traindata,
                               traintime=traintime,
                               trainstatus=trainstatus,
-                              arg=arg,
-                              size=size,
-                              verbose=verbose)
+                              cvarg=cvarg)
       if (is.empty(peelobj$varsel)) {
          success <- FALSE
          varsel <- NULL
@@ -989,9 +964,9 @@ cv.prsp.tune <- function(traindata,
       } else {
          # Retrieving screened variables and box from the univariate screening
          success <- TRUE
-         varsel <- peelobj$varsel
-         varsign <- peelobj$varsign
-         varcut <- peelobj$varcut
+         varsel <- peelobj$varsel[1:msize]
+         varsign <- peelobj$varsign[1:msize]
+         varcut <- peelobj$varcut[1:msize]
          # Extract the rule and sign as one vector
          test.cut <- t(t(testdata[,varsel, drop=FALSE]) * varsign)
          test.ind <- t(t(test.cut) >= varcut * varsign)
@@ -1042,21 +1017,25 @@ cv.prsp.tune <- function(traindata,
 cv.prsp.univ <- function(traindata,
                          traintime,
                          trainstatus,
-                         arg,
-                         size,
-                         verbose) {
+                         cvarg) {
 
-   # Parsing and evaluating 'arg' parameters to evaluate 'peelcriterion'
+   # Parsing and evaluating 'arg' to evaluate all parameters
    alpha <- NULL
    beta <- NULL
-   minn <- NULL
    L <- NULL
    peelcriterion <- NULL
-   eval(parse( text=unlist(strsplit(x=arg, split=",")) ))
+   cvcriterion <- NULL
+   eval(parse( text=unlist(strsplit(x=cvarg, split=",")) ))
 
-   # univariate screening
+   # Creating argument `arg` of `cv.comb.peel` for PRSP parameters
+   arg <- paste("alpha=", alpha,
+                ",beta=", beta,
+                ",L=", L,
+                ",peelcriterion=\"", peelcriterion, "\"", sep="")
+
+   # Univariate screening
    p <- ncol(traindata)
-   stat <- numeric(p)
+   varstat <- numeric(p)
    varsel <- 1:p
    varsign <- numeric(p)
    varcut <- numeric(p)
@@ -1070,24 +1049,85 @@ cv.prsp.univ <- function(traindata,
                        varsign=NULL,
                        initcutpts=NULL,
                        arg=arg)
-      if (verbose) cat("covariate: ", j, "\t (maxstep: ", prsp.fit$nsteps, ")\n")
+      varcut[j] <- prsp.fit$boxcut[1,1,drop=TRUE]
       varsign[j] <- prsp.fit$varsign
-      varcut[j] <- prsp.fit$boxcut[1,,drop=TRUE]
-      if (peelcriterion == "lrt") {
-         stat[j] <- prsp.fit$lrt
-      } else if (peelcriterion == "lhr") {
-         stat[j] <- prsp.fit$lhr
-      } else if (peelcriterion == "chs") {
-         stat[j] <- prsp.fit$chs
+      Lm <- prsp.fit$maxsteps
+      l <- 1
+      boxstat <- numeric(Lm)
+      while (l <= Lm) {
+         # Extract the rule and sign as one vector
+         boxcut <- prsp.fit$boxcut[l,1,drop=TRUE]
+         train.cut <- t(t(traindata[,j,drop=FALSE]) * varsign[j])
+         train.ind <- t(t(train.cut) >= boxcut * varsign[j])
+         # Select which test observations are `TRUE`
+         pred <- (rowMeans(train.ind) == 1)
+         train.ind1 <- 1*pred
+         if ((sum(pred, na.rm=TRUE) != length(pred[!is.na(pred)])) && (sum(pred, na.rm=TRUE) != 0)) {
+            surv.formula <- (survival::Surv(traintime, trainstatus) ~ 1 + train.ind1)
+            if (cvcriterion == "lhr") {
+               coxobj <- survival::coxph(surv.formula, singular.ok=TRUE, iter.max=1)
+               boxstat[l] <- coxobj$coef
+            } else if (cvcriterion == "lrt") {
+               boxstat[l] <- survival::survdiff(surv.formula, rho=0)$chisq
+            } else if (cvcriterion == "cer") {
+               coxobj <- survival::coxph(surv.formula, singular.ok=TRUE, iter.max=1)
+               predobj <- predict(object=coxobj, type="lp", reference="sample")
+               boxstat[l] <- Hmisc::rcorr.cens(x=predobj, S=survival::Surv(traintime, trainstatus))['C Index']
+            } else {
+               stop("Invalid CV criterion option. Exiting ... \n\n")
+            }
+         } else {
+            if (cvcriterion == "lhr") {
+               boxstat[l] <- 0
+            } else if (cvcriterion == "lrt") {
+               boxstat[l] <- 0
+            } else if (cvcriterion == "cer") {
+               boxstat[l] <- 1
+            } else {
+               stop("Invalid CV criterion option. Exiting ... \n\n")
+            }
+         }
+         l <- l + 1
+      }
+      if (cvcriterion == "lhr") {
+         if (all(is.na(boxstat)) || is.empty(boxstat)) {
+            varstat[j] <- NA
+         } else {
+            boxstat.opt <- which.max(boxstat)
+            varstat[j] <- boxstat[boxstat.opt]
+         }
+      } else if (cvcriterion == "lrt") {
+         if (all(is.na(boxstat)) || is.empty(boxstat)) {
+            varstat[j] <- NA
+         } else {
+            boxstat.opt <- which.max(boxstat)
+            varstat[j] <- boxstat[boxstat.opt]
+         }
+      } else if (cvcriterion == "cer") {
+         if (all(is.na(boxstat)) || is.empty(boxstat)) {
+            varstat[j] <- NA
+         } else {
+            boxstat.opt <- which.min(boxstat)
+            varstat[j] <- boxstat[boxstat.opt]
+         }
       } else {
-         stop("Invalid peeling criterion. Exiting ... \n\n")
+         stop("Invalid CV criterion option. Exiting ... \n\n")
       }
    }
-   # order stat screening
-   ord <- order(stat, decreasing=TRUE, na.last=TRUE)
-   varsel <- varsel[ord[1:size]]
-   varsign <- varsign[ord[1:size]]
-   varcut <- varcut[ord[1:size]]
+
+   # Order by variable statistics
+   if (cvcriterion == "lhr") {
+      ord <- order(varstat, decreasing=TRUE, na.last=TRUE)
+   } else if (cvcriterion == "lrt") {
+      ord <- order(varstat, decreasing=TRUE, na.last=TRUE)
+   } else if (cvcriterion == "cer") {
+      ord <- order(varstat, decreasing=FALSE, na.last=TRUE)
+   } else {
+      stop("Invalid CV criterion option. Exiting ... \n\n")
+   }
+   varsel <- varsel[ord]
+   varsign <- varsign[ord]
+   varcut <- varcut[ord]
 
    return(list("varsel"=varsel,
                "varsign"=varsign,
@@ -1114,13 +1154,23 @@ cv.pcqr <- function(X,
                     verbose,
                     seed) {
 
-   # Parsing and evaluating 'vsarg' parameters to evaluate 'tau', 'alpha', 'nalpha', 'nlambda' and 'vscons'
+   # Parsing and evaluating 'vsarg' argument to evaluate all parameters
    tau <- NULL
    alpha <- NULL
    nalpha <- NULL
    nlambda <- NULL
    vscons <- NULL
    eval(parse( text=unlist(strsplit(x=vsarg, split=",")) ))
+
+   M <- 2
+   msize <- numeric(M)
+
+   if (is.null(alpha)) {
+      enalpha <- seq(from=0, to=1, length.out=nalpha)
+   } else {
+      nalpha <- 1
+      enalpha <- alpha
+   }
 
    if (!is.null(seed)) {
       set.seed(seed)
@@ -1131,18 +1181,11 @@ cv.pcqr <- function(X,
    }
    folds <- cv.folds(y=delta, K=K, seed=seed)
 
-   if (is.null(alpha)) {
-      enalpha <- seq(from=0, to=1, length.out=nalpha)
-   } else {
-      nalpha <- 1
-      enalpha <- alpha
-   }
-
    varsel.list <- vector(mode="list", length=K)
    varsign.list <- vector(mode="list", length=K)
    k <- 1
    while (k <= K) {
-      if (verbose) cat("Fold : ", k, "\n", sep="")
+      if ((verbose) && (cv)) cat("Fold : ", k, "\n", sep="")
       # Initialize training and test data
       if (K == 1) {
          traindata <- testdata <- X[folds$perm[(folds$which == k)], , drop=FALSE]
@@ -1256,14 +1299,13 @@ cv.pcqr <- function(X,
       enalpha.1se <- NA
       enlambda.min <- NA
       enlambda.1se <- NA
+      msize <- rep(NA, M)
       success <- FALSE
    } else {
       # Get the selected covariates with their signs from all folds for each optimal lambda value
-      varsel <- vector(mode="list", length=2)
-      varsign <- vector(mode="list", length=2)
-      names(varsel) <- c("enlambda.1se", "enlambda.min")
-      names(varsign) <- c("enlambda.1se", "enlambda.min")
-      for (l in 1:2) {
+      varsel <- vector(mode="list", length=M)
+      varsign <- vector(mode="list", length=M)
+      for (l in 1:M) {
          sel.l <- numeric(0)
          sign.l <- numeric(0)
          for (k in 1:K) {
@@ -1321,20 +1363,32 @@ cv.pcqr <- function(X,
          enalpha.1se <- NA
          enlambda.min <- NA
          enlambda.1se <- NA
+         msize <- rep(NA, M)
          success <- FALSE
       } else {
          if (onese) {
             varsel <- varsel[[1]]
             varsign <- varsign[[1]]
+            msize[1] <- length(varsel)
          } else {
             varsel <- varsel[[2]]
             varsign <- varsign[[2]]
+            msize[2] <- length(varsel)
          }
          success <- TRUE
       }
    }
 
-   return(list("varsel"=varsel,
+   # Returning updated argument `vsarg` of variable selection parameters
+   vsarg <- list("tau"=tau,
+                 "alpha"=alpha,
+                 "nalpha"=nalpha,
+                 "nlambda"=nlambda,
+                 "vscons"=vscons,
+                 "msize"=msize)
+
+      return(list("vsarg"=vsarg,
+               "varsel"=varsel,
                "varsign"=varsign,
                "enalpha.min"=enalpha.min,
                "enalpha.1se"=enalpha.1se,
@@ -1458,7 +1512,6 @@ cv.pcqreg <- function(X,
          set.seed(seed)
       }
       for (i in 1:nfolds) {
-         if (verbose) cat("CV fold #", i , sep="", "\n")
          fit.i <- cvf(i=i,
                       XX=X,
                       y=y,
@@ -1787,12 +1840,22 @@ cv.ppl <- function(X,
                    verbose,
                    seed) {
 
-   # Parsing and evaluating 'vsarg' parameters to evaluate 'alpha', 'nalpha', 'nlambda' and 'vscons'
+   # Parsing and evaluating 'vsarg' argument to evaluate all parameters
    alpha <- NULL
    nalpha <- NULL
    nlambda <- NULL
    vscons <- NULL
    eval(parse( text=unlist(strsplit(x=vsarg, split=",")) ))
+
+   M <- 2
+   msize <- numeric(M)
+
+   if (is.null(alpha)) {
+      enalpha <- seq(from=0, to=1, length.out=nalpha)
+   } else {
+      nalpha <- 1
+      enalpha <- alpha
+   }
 
    if (!is.null(seed)) {
       set.seed(seed)
@@ -1803,18 +1866,11 @@ cv.ppl <- function(X,
    }
    folds <- cv.folds(y=delta, K=K, seed=seed)
 
-   if (is.null(alpha)) {
-      enalpha <- seq(from=0, to=1, length.out=nalpha)
-   } else {
-      nalpha <- 1
-      enalpha <- alpha
-   }
-
    varsel.list <- vector(mode="list", length=K)
    varsign.list <- vector(mode="list", length=K)
    k <- 1
    while (k <= K) {
-      if (verbose) cat("Fold : ", k, "\n", sep="")
+      if ((verbose) && (cv)) cat("Fold : ", k, "\n", sep="")
       # Initialize training and test data
       if (K == 1) {
          traindata <- testdata <- X[folds$perm[(folds$which == k)], , drop=FALSE]
@@ -1891,14 +1947,13 @@ cv.ppl <- function(X,
       enalpha.1se <- NA
       enlambda.min <- NA
       enlambda.1se <- NA
+      msize <- rep(NA, M)
       success <- FALSE
    } else {
       # Get the selected covariates with their signs from all folds for each optimal lambda value
-      varsel <- vector(mode="list", length=2)
-      varsign <- vector(mode="list", length=2)
-      names(varsel) <- c("enlambda.1se", "enlambda.min")
-      names(varsign) <- c("enlambda.1se", "enlambda.min")
-      for (l in 1:2) {
+      varsel <- vector(mode="list", length=M)
+      varsign <- vector(mode="list", length=M)
+      for (l in 1:M) {
          sel.l <- numeric(0)
          sign.l <- numeric(0)
          for (k in 1:K) {
@@ -1956,20 +2011,31 @@ cv.ppl <- function(X,
          enalpha.1se <- NA
          enlambda.min <- NA
          enlambda.1se <- NA
+         msize <- rep(NA, M)
          success <- FALSE
       } else {
          if (onese) {
             varsel <- varsel[[1]]
             varsign <- varsign[[1]]
+            msize[1] <- length(varsel)
          } else {
             varsel <- varsel[[2]]
             varsign <- varsign[[2]]
+            msize[2] <- length(varsel)
          }
          success <- TRUE
       }
    }
 
-   return(list("varsel"=varsel,
+   # Returning updated argument `vsarg` of variable selection parameters
+   vsarg <- list("alpha"=alpha,
+                 "nalpha"=nalpha,
+                 "nlambda"=nlambda,
+                 "vscons"=vscons,
+                 "msize"=msize)
+
+   return(list("vsarg"=vsarg,
+               "varsel"=varsel,
                "varsign"=varsign,
                "enalpha.min"=enalpha.min,
                "enalpha.1se"=enalpha.1se,
@@ -1999,12 +2065,15 @@ cv.spca <- function(X,
                     verbose,
                     seed) {
 
-   # Parsing and evaluating 'vsarg' parameters to evaluate 'n.thres', 'n.pcs', 'n.var' and 'vscons'
+   # Parsing and evaluating 'vsarg' argument to evaluate all parameters
    n.thres <- NULL
    n.pcs <- NULL
    n.var <- NULL
    vscons <- NULL
    eval(parse( text=unlist(strsplit(x=vsarg, split=",")) ))
+
+   M <- 1
+   msize <- numeric(M)
 
    if (ncol(X) <= n.var) {
       n.var <- pmin(ncol(X), n.var) - 1
@@ -2028,7 +2097,7 @@ cv.spca <- function(X,
    varsign.list <- vector(mode="list", length=K)
    k <- 1
    while (k <= K) {
-      if (verbose) cat("Fold : ", k, "\n", sep="")
+      if ((verbose) && (cv)) cat("Fold : ", k, "\n", sep="")
       # Initialize training and test data
       if (K == 1) {
          traindata <- testdata <- X[folds$perm[(folds$which == k)], , drop=FALSE]
@@ -2069,15 +2138,15 @@ cv.spca <- function(X,
       max.thr <- max.mat[2]
 
       # Trained model used to predict the survival times on the test set
-      fit <- superpc::superpc.predict(object=ws.train,
-                                      data=pca.train.data,
-                                      newdata=pca.test.data,
-                                      prediction.type="continuous",
-                                      threshold=var.thres[max.thr],
-                                      n.components=max.npcs)
+      superpcfit <- superpc::superpc.predict(object=ws.train,
+                                             data=pca.train.data,
+                                             newdata=pca.test.data,
+                                             prediction.type="continuous",
+                                             threshold=var.thres[max.thr],
+                                             n.components=max.npcs)
 
       # List of selected variables (exceeding threshold) used in each fold
-      varsel <- which(fit$which.features)
+      varsel <- which(superpcfit$which.features)
       if (is.empty(varsel)) {
          varsel.list[[k]] <- NA
          varsign.list[[k]] <- NA
@@ -2103,7 +2172,7 @@ cv.spca <- function(X,
          names(rawscor) <- names(scores[ordscor])
          varsign.list[[k]] <- sign(rawscor)
          # Determining the separating threshold of median survival time and formation of the two prognostic groups
-         pred.pcr <- fit$v.pred.1df
+         pred.pcr <- superpcfit$v.pred.1df
          pred.ind <- (pred.pcr <= median(pred.pcr))
       }
       k <- k + 1
@@ -2114,6 +2183,7 @@ cv.spca <- function(X,
       # Failed to select any covariates
       varsel <- NA
       varsign <- NA
+      msize <- NA
       success <- FALSE
    } else {
       # Get the selected covariates with their signs from all folds
@@ -2165,13 +2235,23 @@ cv.spca <- function(X,
       if (all(is.na(varsel))) {
          varsel <- NA
          varsign <- NA
+         msize <- NA
          success <- FALSE
       } else {
+         msize <- length(varsel)
          success <- TRUE
       }
    }
 
-   return(list("varsel"=varsel,
+   # Returning updated argument `vsarg` of variable selection parameters
+   vsarg <- list("n.thres"=n.thres,
+                 "n.pcs"=n.pcs,
+                 "n.var"=n.var,
+                 "vscons"=vscons,
+                 "msize"=msize)
+
+   return(list("vsarg"=vsarg,
+               "varsel"=varsel,
                "varsign"=varsign,
                "success"=success,
                "seed"=seed))
@@ -2405,34 +2485,36 @@ cv.type.box <- function(X,
             cat("Replicate : ", b, "\n", sep="")
             cat("seed : ", seed[b], "\n", sep="")
          }
-         if (cv) {
-            if (cvtype == "averaged") {
-               CVBOX <- cv.ave.box(X=X, y=y, delta=delta,
-                                   K=K, cv=cv, cvarg=cvarg,
-                                   decimals=decimals,
-                                   probval=probval, timeval=timeval,
-                                   varsign=varsign, initcutpts=initcutpts,
-                                   verbose=verbose,
-                                   seed=seed[b])
-            } else if (cvtype == "combined") {
-               CVBOX <- cv.comb.box(X=X, y=y, delta=delta,
-                                    K=K, cv=cv, cvarg=cvarg,
-                                    decimals=decimals,
-                                    probval=probval, timeval=timeval,
-                                    varsign=varsign, initcutpts=initcutpts,
-                                    verbose=verbose,
-                                    seed=seed[b])
-            } else {
-               stop("Invalid CV type option. Exiting ... \n\n")
-            }
-         } else{
-            CVBOX <- cv.comb.box(X=X, y=y, delta=delta,
-                                 K=1, cv=cv, cvarg=cvarg,
+         if (cvtype == "averaged") {
+            CVBOX <- cv.ave.box(X=X,
+                                y=y,
+                                delta=delta,
+                                K=K,
+                                cv=cv,
+                                cvarg=cvarg,
+                                decimals=decimals,
+                                probval=probval,
+                                timeval=timeval,
+                                varsign=varsign,
+                                initcutpts=initcutpts,
+                                verbose=verbose,
+                                seed=seed[b])
+         } else if (cvtype == "combined") {
+            CVBOX <- cv.comb.box(X=X,
+                                 y=y,
+                                 delta=delta,
+                                 K=K,
+                                 cv=cv,
+                                 cvarg=cvarg,
                                  decimals=decimals,
-                                 probval=probval, timeval=timeval,
-                                 varsign=varsign, initcutpts=initcutpts,
+                                 probval=probval,
+                                 timeval=timeval,
+                                 varsign=varsign,
+                                 initcutpts=initcutpts,
                                  verbose=verbose,
                                  seed=seed[b])
+         } else {
+            stop("Invalid CV type option. Exiting ... \n\n")
          }
          success[b] <- CVBOX$success
          CV.maxsteps[b] <- CVBOX$cvfit$cv.maxsteps
@@ -2453,34 +2535,36 @@ cv.type.box <- function(X,
 
    } else {
 
-      if (cv) {
-         if (cvtype == "averaged") {
-            CVBOX <- cv.ave.box(X=X, y=y, delta=delta,
-                                K=K, cv=cv, cvarg=cvarg,
-                                decimals=decimals,
-                                probval=probval, timeval=timeval,
-                                varsign=varsign, initcutpts=initcutpts,
-                                verbose=verbose,
-                                seed=NULL)
-         } else if (cvtype == "combined") {
-            CVBOX <- cv.comb.box(X=X, y=y, delta=delta,
-                                 K=K, cv=cv, cvarg=cvarg,
-                                 decimals=decimals,
-                                 probval=probval, timeval=timeval,
-                                 varsign=varsign, initcutpts=initcutpts,
-                                 verbose=verbose,
-                                 seed=NULL)
-         } else {
-            stop("Invalid CV type option. Exiting ... \n\n")
-         }
-      } else {
-         CVBOX <- cv.comb.box(X=X, y=y, delta=delta,
-                              K=1, cv=cv, cvarg=cvarg,
+      if (cvtype == "averaged") {
+         CVBOX <- cv.ave.box(X=X,
+                             y=y,
+                             delta=delta,
+                             K=K,
+                             cv=cv,
+                             cvarg=cvarg,
+                             decimals=decimals,
+                             probval=probval,
+                             timeval=timeval,
+                             varsign=varsign,
+                             initcutpts=initcutpts,
+                             verbose=verbose,
+                             seed=NULL)
+      } else if (cvtype == "combined") {
+         CVBOX <- cv.comb.box(X=X,
+                              y=y,
+                              delta=delta,
+                              K=K,
+                              cv=cv,
+                              cvarg=cvarg,
                               decimals=decimals,
-                              probval=probval, timeval=timeval,
-                              varsign=varsign, initcutpts=initcutpts,
+                              probval=probval,
+                              timeval=timeval,
+                              varsign=varsign,
+                              initcutpts=initcutpts,
                               verbose=verbose,
                               seed=NULL)
+      } else {
+         stop("Invalid CV type option. Exiting ... \n\n")
       }
       success <- CVBOX$success
       CV.maxsteps <- CVBOX$cvfit$cv.maxsteps
@@ -2581,9 +2665,9 @@ cv.pval <- function(X,
       # Parsing and evaluating 'cvarg' parameters to evaluate 'L'
       alpha <- NULL
       beta <- NULL
-      minn <- NULL
       L <- NULL
       peelcriterion <- NULL
+      cvcriterion <- NULL
       eval(parse( text=unlist(strsplit(x=cvarg, split=",")) ))
 
       seed <- seed[1]
@@ -2887,13 +2971,19 @@ cv.ave.box <- function(X,
    n <- nrow(X)
    p <- ncol(X)
 
-   # Parsing and evaluating 'cvarg' parameters to evaluate 'beta' and 'minn'
+   # Parsing and evaluating 'cvarg' parameters to evaluate 'beta'
    alpha <- NULL
    beta <- NULL
-   minn <- NULL
    L <- NULL
    peelcriterion <- NULL
+   cvcriterion <- NULL
    eval(parse( text=unlist(strsplit(x=cvarg, split=",")) ))
+
+   # Creating argument `arg` of `cv.ave.peel` for PRSP parameters
+   arg <- paste("alpha=", alpha,
+                ",beta=", beta,
+                ",L=", L,
+                ",peelcriterion=\"", peelcriterion, "\"", sep="")
 
    if (!cv) {
       K <- 1
@@ -2903,10 +2993,10 @@ cv.ave.box <- function(X,
    boxstat.list <- vector(mode="list", length=K)
    boxcut.list <- vector(mode="list", length=K)
    trace.list <- vector(mode="list", length=K)
-   nsteps <- numeric(K)
+   maxsteps <- numeric(K)
 
    for (k in 1:K) {
-      if (verbose) cat("Fold : ", k, "\n", sep="")
+      if ((verbose) && (cv)) cat("Fold : ", k, "\n", sep="")
       # Initialize training and test data
       if (K == 1) {
          traindata <- testdata <- X[folds$perm[(folds$which == k)], , drop=FALSE]
@@ -2923,16 +3013,16 @@ cv.ave.box <- function(X,
       peelobj <- cv.ave.peel(traindata=traindata, trainstatus=trainstatus, traintime=traintime,
                              testdata=testdata, teststatus=teststatus, testtime=testtime,
                              probval=probval, timeval=timeval,
-                             varsign=varsign, initcutpts=initcutpts, arg=cvarg)
+                             varsign=varsign, initcutpts=initcutpts, arg=arg)
       # Store the test set results from each fold
-      nsteps[k] <- peelobj$nsteps
+      maxsteps[k] <- peelobj$maxsteps
       boxstat.list[[k]] <- peelobj$boxstat
       boxcut.list[[k]] <- peelobj$boxcut
       trace.list[[k]] <- peelobj$trace
    }
 
    # Cross-validated maximum peeling length from all folds
-   CV.Lm <- min(nsteps)
+   CV.Lm <- min(maxsteps)
 
    # Truncate the cross-validated quantities from all folds to the same cross-validated length
    for (k in 1:K) {
@@ -2965,7 +3055,7 @@ cv.ave.box <- function(X,
    colnames(CV.boxind) <- rownames(X)
 
    # Get the adjusted cross-validated maximum peeling length, thresholded by minimal box support
-   CV.Lm <- max(which(apply(CV.boxind, 1, function(x) {length(which(x))/n >= max(minn/n, beta)})))
+   CV.Lm <- max(which(apply(CV.boxind, 1, function(x) {length(which(x))/n >= max(1/n, beta)})))
 
    # Get the adjusted cross-validated quantities from all folds to the same cross-validated length
    for (k in 1:K) {
@@ -3204,13 +3294,19 @@ cv.comb.box <- function(X,
    n <- nrow(X)
    p <- ncol(X)
 
-   # Parsing and evaluating 'cvarg' parameters to evaluate 'beta' and 'minn'
+   # Parsing and evaluating 'cvarg' parameters to evaluate 'beta'
    alpha <- NULL
    beta <- NULL
-   minn <- NULL
    L <- NULL
    peelcriterion <- NULL
+   cvcriterion <- NULL
    eval(parse( text=unlist(strsplit(x=cvarg, split=",")) ))
+
+   # Creating argument `arg` of `cv.comb.peel` for PRSP parameters
+   arg <- paste("alpha=", alpha,
+                ",beta=", beta,
+                ",L=", L,
+                ",peelcriterion=\"", peelcriterion, "\"", sep="")
 
    if (!cv) {
       K <- 1
@@ -3223,10 +3319,10 @@ cv.comb.box <- function(X,
    boxind.list <- vector(mode="list", length=K)
    boxcut.list <- vector(mode="list", length=K)
    trace.list <- vector(mode="list", length=K)
-   nsteps <- numeric(K)
+   maxsteps <- numeric(K)
 
    for (k in 1:K) {
-      if (verbose) cat("Fold : ", k, "\n", sep="")
+      if ((verbose) && (cv)) cat("Fold : ", k, "\n", sep="")
       if (K == 1) {
          traindata <- testdata <- X[folds$perm[(folds$which == k)], , drop=FALSE]
          traintime <- testtime <- y[folds$perm[(folds$which == k)]]
@@ -3244,16 +3340,16 @@ cv.comb.box <- function(X,
       status.list[[k]] <- teststatus
       peelobj <- cv.comb.peel(traindata=traindata, trainstatus=trainstatus, traintime=traintime,
                               testdata=testdata, teststatus=teststatus, testtime=testtime,
-                              varsign=varsign, initcutpts=initcutpts, arg=cvarg)
+                              varsign=varsign, initcutpts=initcutpts, arg=arg)
       # Store the test set results from each fold
-      nsteps[k] <- peelobj$nsteps
+      maxsteps[k] <- peelobj$maxsteps
       boxind.list[[k]] <- peelobj$boxind
       boxcut.list[[k]] <- peelobj$boxcut
       trace.list[[k]] <- peelobj$trace
    }
 
    # Cross-validated maximum peeling length from all folds
-   CV.Lm <- min(nsteps)
+   CV.Lm <- min(maxsteps)
 
    # Get the test box membership indicator vector of all observations for each step from all the folds
    # Based on the combined membership indicator vectors over the folds
@@ -3263,7 +3359,7 @@ cv.comb.box <- function(X,
    colnames(CV.boxind) <- rownames(X)
 
    # Get the adjusted cross-validated maximum peeling length, thresholded by minimal box support
-   CV.Lm <- max(which(apply(CV.boxind, 1, function(x) {length(which(x))/n >= max(minn/n, beta)})))
+   CV.Lm <- max(which(apply(CV.boxind, 1, function(x) {length(which(x))/n >= max(1/n, beta)})))
 
    # Get the adjusted test box membership indicator vector of all observations for each step from all the folds
    CV.boxind <- CV.boxind[1:CV.Lm,,drop=FALSE]
@@ -3539,14 +3635,14 @@ cv.ave.peel <- function(traindata,
    # Training the model
    peelobj <- prsp(traindata=traindata, traintime=traintime, trainstatus=trainstatus,
                    varsign=varsign, initcutpts=initcutpts, arg=arg)
-   nsteps <- peelobj$nsteps
+   maxsteps <- peelobj$maxsteps
 
    # Compute the box statistics for all steps, each entry or row signifies a step
-   boxstat <- vector(mode="list", length=nsteps)
-   timemat <- matrix(NA, nrow=nsteps, ncol=nrow(testdata))
-   probmat <- matrix(NA, nrow=nsteps, ncol=nrow(testdata))
+   boxstat <- vector(mode="list", length=maxsteps)
+   timemat <- matrix(NA, nrow=maxsteps, ncol=nrow(testdata))
+   probmat <- matrix(NA, nrow=maxsteps, ncol=nrow(testdata))
    ind.rem <- numeric(0)
-   for (l in 1:nsteps) {
+   for (l in 1:maxsteps) {
       # Extract the rule and sign as one vector
       boxcut <- peelobj$boxcut[l, ] * varsign
       test.cut <- t(t(testdata) * varsign)
@@ -3586,13 +3682,13 @@ cv.ave.peel <- function(traindata,
          ind.rem <- c(ind.rem, l)
       }
    }
-   if (length(ind.rem) != nsteps) {
+   if (length(ind.rem) != maxsteps) {
       endobj <- endpoints (ind=ind.rem, timemat=timemat, probmat=probmat, timeval=timeval, probval=probval)
       time.bar <- endobj$time.bar
       prob.bar <- endobj$prob.bar
       max.time.bar <- endobj$max.time.bar
       min.prob.bar <- endobj$min.prob.bar
-      for (l in 1:nsteps) {
+      for (l in 1:maxsteps) {
          if (!(l %in% ind.rem)) {
             boxstat[[l]] <- c(boxstat[[l]], time.bar[l], prob.bar[l], max.time.bar[l], min.prob.bar[l])
          } else {
@@ -3600,12 +3696,12 @@ cv.ave.peel <- function(traindata,
          }
       }
    } else {
-      for (l in 1:nsteps) {
+      for (l in 1:maxsteps) {
          boxstat[[l]] <- rep(x=NA, times=7)
       }
    }
 
-   return(list("nsteps"=nsteps, "boxstat"=boxstat, "boxcut"=peelobj$boxcut, "trace"=peelobj$vartrace))
+   return(list("maxsteps"=maxsteps, "boxstat"=boxstat, "boxcut"=peelobj$boxcut, "trace"=peelobj$vartrace))
 }
 #===============================================================================================================================#
 
@@ -3652,11 +3748,11 @@ cv.comb.peel <- function(traindata,
    # Training the model
    peelobj <- prsp(traindata=traindata, traintime=traintime, trainstatus=trainstatus,
                    varsign=varsign, initcutpts=initcutpts, arg=arg)
-   nsteps <- peelobj$nsteps
+   maxsteps <- peelobj$maxsteps
 
    # Create the indicator matrix of the test data that is within the box for each step
-   boxind <- matrix(NA, nrow=nsteps, ncol=nrow(testdata))
-   for (l in 1:nsteps) {
+   boxind <- matrix(NA, nrow=maxsteps, ncol=nrow(testdata))
+   for (l in 1:maxsteps) {
       # Extract the rule and sign as one vector
       boxcut <- peelobj$boxcut[l, ] * varsign
       test.cut <- t(t(testdata) * varsign)
@@ -3665,7 +3761,7 @@ cv.comb.peel <- function(traindata,
       boxind[l, ] <- (rowMeans(test.ind) == 1)
    }
 
-   return(list("boxind"=boxind, "nsteps"=nsteps, "boxcut"=peelobj$boxcut, "trace"=peelobj$vartrace))
+   return(list("boxind"=boxind, "maxsteps"=maxsteps, "boxcut"=peelobj$boxcut, "trace"=peelobj$vartrace))
 }
 #===============================================================================================================================#
 
@@ -3686,12 +3782,6 @@ cv.comb.peel <- function(traindata,
 #===============#
 # Description   :
 #===============#
-#	Note: The maximal number of peeling steps (ncut) is determined either by alpha and beta metaparameters
-#   or the smallest fraction of data, i.e. 1/n:
-#      ceiling(log(beta) / log(1 - alpha)) # if alpha and beta fixed by user
-#	    ceiling(log(1/n) / log(1 - alpha))  # if alpha fixed by user and beta fixed by data
-#	    ceiling(log(beta) / log(1 - (1/n))) # if alpha fixed by data and beta fixed by user
-#	    ceiling(log(1/n) / log(1 - (1/n)))  # if alpha and beta fixed by data
 #
 #===============#
 # Arguments     :
@@ -3713,7 +3803,6 @@ prsp <- function(traindata,
    # Parsing and evaluating PRSP parameters
    alpha <- NULL
    beta <- NULL
-   minn <- NULL
    L <- NULL
    peelcriterion <- NULL
    eval(parse( text=unlist(strsplit(x=arg, split=",")) ))
@@ -3725,9 +3814,7 @@ prsp <- function(traindata,
    # Constants
    n <- nrow(traindata)                                   # Number of samples
    p <- ncol(traindata)                                   # Number of initially screened covariates
-   alpha <- max(1/n, alpha)                               # Minimal peeling quantile
-   beta <- max(minn/n, beta)                              # Threshold of minimal box support by `minn` points
-   ncut <- ceiling(log(beta) / log(1 - alpha))            # Maximal possible number of peeling steps
+   Lmax <- ceiling(log(beta) / log(1 - alpha))            # Maximal possible number of peeling steps
 
    # Directions of peeling
    if (is.null(varsign)) {
@@ -3752,11 +3839,11 @@ prsp <- function(traindata,
    }
 
    # Initializations of returned objects
-   vartrace <- numeric(ncut)
-   boxcut <- matrix(data=NA, nrow=ncut, ncol=p)
-   lhrlj <- matrix(NA, ncut, p)
-   lrtlj <- matrix(NA, ncut, p)
-   chslj <- matrix(NA, ncut, p)
+   vartrace <- numeric(Lmax)
+   boxcut <- matrix(data=NA, nrow=Lmax, ncol=p)
+   lhrlj <- matrix(NA, Lmax, p)
+   lrtlj <- matrix(NA, Lmax, p)
+   chslj <- matrix(NA, Lmax, p)
 
    # Initializations for the PRSP loop
    digits <- getOption("digits")
@@ -3767,24 +3854,14 @@ prsp <- function(traindata,
    xsel <- traindata                                      # Initial selection of samples from training data
    varpeel <- (apply(traindata, 2, "var") > 10^(-digits)) # Initial selection of covariates for peeling
    continue <- TRUE
-   if (!(is.null(L))) {
-      L <- min(L, ncut)
-      switch <- 1
-   } else {
-      L <- 1
-      switch <- 0
-   }
    l <- 1
 
    # PRSP loop
-   while ((boxmass >= beta) & (l*switch < L) & (continue)) {
-
+   while ((boxmass >= beta) & (l <= L) & (continue)) {
       xsign <- t(t(xsel) * varsign)
-
       # Potential cutpts by dimension
       cutpts.sign <- updatecut(X=xsign, fract=alpha)
       cutpts <- cutpts.sign * varsign
-
       # Update box membership indicator by dimension
       boxes <- as.matrix(t((t(traindata) * varsign) >= as.vector(cutpts.sign)) & sel)
 
@@ -3826,52 +3903,39 @@ prsp <- function(traindata,
             varpeel[j] <- FALSE
          }
       }
-
       # If the previous attempted peeling succeeded
       if (sum(varpeel) > 0 && (!is.empty(vmd[(!is.nan(vmd)) & (!is.infinite(vmd)) & (!is.na(vmd))]))) {
-
          # Maximizing the rate of increase of peeling criterion.
          # Only one variable (the first one in rank) is selected in case of ties
          varj <- which(vmd == max(vmd[(!is.nan(vmd)) & (!is.infinite(vmd))], na.rm=TRUE))[1]
-
          # Updating
          sel <- boxes[, varj, drop=TRUE]
          boxmass <- mean(1 * sel)
          xsel <- traindata[sel, ,drop=FALSE]
          varpeel <- (apply(xsel, 2, "var") > 10^(-digits))
          boxcutpts[varj] <- cutpts[varj]
-
          # Saving trained box quantities of interest for the current peeling step
          boxcut[l, ] <- boxcutpts
          vartrace[l] <- varj
-
          # Else exiting the loop
       } else {
          continue <- FALSE
       }
       l <- l + 1
-
    }
-
    l <- l - 1
-   lrt <- lrtlj[l,,drop=TRUE]
-   lhr <- lhrlj[l,,drop=TRUE]
-   chs <- chslj[l,,drop=TRUE]
 
-   # Prepending the first step box covering all the data
+   # Prepending the first-step box covering all the training data
    boxcut <- rbind(initcutpts, boxcut[1:l, , drop=FALSE])
    vartrace <- c(0, vartrace[1:l])
    rownames(boxcut) <- paste("step", 0:l, sep="")
    colnames(boxcut) <- colnames(traindata)
    names(vartrace) <- paste("step", 0:l, sep="")
 
-   return(list("nsteps"=l+1,
+   return(list("maxsteps"=l+1,
                "boxcut"=boxcut,
                "vartrace"=vartrace,
-               "varsign"=varsign,
-               "lrt"=lrt,
-               "chs"=chs,
-               "lhr"=lhr))
+               "varsign"=varsign))
 }
 #===============================================================================================================================#
 
@@ -4394,10 +4458,15 @@ cbindlist <- function(list, trunc) {
 is.empty <- function(x) {
 
    if (is.vector(x)) {
-      if((length(x) == 0) || (x == "")) {
-         return(TRUE)
-      } else {
+      y <- which(is.na(x))
+      if (length(y) != 0) {
          return(FALSE)
+      } else {
+         if((length(x) == 0) || (x == "")) {
+            return(TRUE)
+         } else {
+            return(FALSE)
+         }
       }
    } else if (is.matrix(x) || is.data.frame(x)) {
       return( ((nrow(x) == 0) || (ncol(x) == 0)) )
@@ -4405,6 +4474,34 @@ is.empty <- function(x) {
       return( ((length(x) == 0) || (x == "")) )
    }
 
+}
+#===============================================================================================================================#
+
+
+
+
+#===============================================================================================================================#
+#===============#
+# Usage         :
+#===============#
+#                    is.wholenumber
+#
+#===============#
+# Description   :
+#===============#
+#
+#===============#
+# Arguments     :
+#===============#
+#
+#===============#
+# Values        :
+#===============#
+#
+#===============================================================================================================================#
+
+is.wholenumber <- function(x, tol=.Machine$double.eps^0.5) {
+    (abs(x - round(x)) < tol)
 }
 #===============================================================================================================================#
 
