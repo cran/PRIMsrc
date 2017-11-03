@@ -1,9 +1,9 @@
-6e27827c276c352003b11dac648bdd50 *DESCRIPTION
+5d0b82c1cb8780b2b226c9f0d7ec0565 *DESCRIPTION
 15fcfc3ba60b801bae38cb778971383a *LICENSE
 aa3192bb22357e2634e127dff0ab7452 *NAMESPACE
-56e29697ea16b48e8a1dcbacedf3af1d *R/PRIMsrc.internal.r
+6a80fb2ba222090c9a6a4416004f5e2d *R/PRIMsrc.internal.r
 08389ab464c6a2a1080c19747d0f4703 *R/PRIMsrc.r
-1c6092cc98c42fe0a8696544f5b17867 *README.md
+abd4299bc0560159c0c833859754cd06 *README.md
 ef2914550c4952d45af268291082d8b1 *data/Real.1.rda
 af16680b837ae7464eeda6ec70492097 *data/Real.2.rda
 54f9bd1c34d18e83c1f37cdfdc09537b *data/Synthetic.1.rda
@@ -13,8 +13,8 @@ e0a643a51972521c3affccf8c40d0518 *data/Synthetic.1b.rda
 5a9253e1d27d7d017e9d25539611c2b3 *data/Synthetic.4.rda
 bca829a07579429f19aed6192b3fbe88 *data/datalist
 96cf15ef19015ad385949c062aaba8d3 *inst/CITATION
-e8c2edc293eb7acf6730e86886752003 *inst/NEWS
-9312fa8ab2e942ee8a2b6fca358fac11 *inst/doc/PRIMsrc_0.7.4.pdf
+b9ec1756d751e28c88fdcc3ede6f097f *inst/NEWS
+c49098db153948faf917c8b79efda38c *inst/doc/PRIMsrc_0.7.5.pdf
 056e01fcdba1f2b9143c6d7d5a604516 *man/PRIMsrc-package.Rd
 c77f0ab45b55e38e4b94d91d336cb84c *man/PRIMsrc.news.Rd
 a67295ea3494679b8020d8a933ed5de5 *man/Real.1-data.Rd
