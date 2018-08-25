@@ -17,8 +17,8 @@
   only complete cases were used. Variables included history of Injection Drug Use ("IDU") 
   at enrollment, African American ethnicity ('Race'), age ('Age'), and baseline CD4 count ('CD4') for a total of 
   \eqn{p=4} clinical covariates. The question in this dataset example was whether it is possible to achieve a 
-  prognostication of patients for AIDS and HAART. See Bacon et al. (2005) and the \href{https://statepi.jhsph.edu/wihs/wordpress/}{WIHS} 
-  website for more details.
+  prognostication of patients for AIDS and HAART. See Bacon et al. (2005) and the 
+  \href{https://statepi.jhsph.edu/wihs/wordpress/}{WIHS} website for more details.
 }
 
 \usage{Real.1}
@@ -37,23 +37,30 @@
         \item "Michael Choe, M.D." \email{mjc206@case.edu}
         \item "Michael LeBlanc, Ph.D." \email{mleblanc@fhcrc.org}
         \item "Alberto Santana, MBA." \email{ahs4@case.edu}
+        \item "J. Sunil Rao, Ph.D." \email{Rao@biostat.med.miami.edu}
     }
     Maintainer: "Jean-Eudes Dazard, Ph.D." \email{jean-eudes.dazard@case.edu}
 }
 
 \references{
     \itemize{
-        \item Dazard J-E. and Rao J.S. (2017).
+        \item Dazard J-E. and Rao J.S. (2018).
               "\emph{Variable Selection Strategies for High-Dimensional Survival Bump Hunting using Recursive Peeling Methods.}"
               (in prep).
+        \item Rao J.S., Huilin Y. and Dazard J-E. (2018).
+              "\emph{Disparity Subtyping: Bringing Precision Medicine Closer to Disparity Science.}"
+              (in prep).
+        \item Diaz-Pachon D.A., Saenz J.P., Dazard J-E. and Rao J.S. (2018).
+              "\emph{Mode Hunting through Active Information.}"
+              (in press).
         \item Diaz-Pachon D.A., Dazard J-E. and Rao J.S. (2017).
               "\emph{Unsupervised Bump Hunting Using Principal Components.}"           
               In: Ahmed SE, editor. Big and Complex Data Analysis: Methodologies and Applications. 
               Contributions to Statistics, vol. Edited Refereed Volume. 
               Springer International Publishing, Cham Switzerland, p. 325-345.
-        \item Yi C. and Huang J. (2016).
+        \item Yi C. and Huang J. (2017).
               "\emph{Semismooth Newton Coordinate Descent Algorithm for Elastic-Net Penalized Huber Loss Regression and Quantile Regression}."
-              J. Comp Graph. Statistics, DOI: 10.1080/10618600.2016.1256816.
+              J. Comp Graph. Statistics, 26(3):547-557.
         \item Dazard J-E., Choe M., LeBlanc M. and Rao J.S. (2016).
               "\emph{Cross-validation and Peeling Strategies for Survival Bump Hunting using Recursive Peeling Methods.}"
               Statistical Analysis and Data Mining, 9(1):12-42.
