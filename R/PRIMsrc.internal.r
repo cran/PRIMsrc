@@ -4398,9 +4398,10 @@ cv.folds <- function (y, n, K=5, seed=NULL) {
     
     y <- as.numeric(y)
     n <- length(y)
-    ylev <- levels(factor(y))
-    ynlev <- length(ylev)
-    
+    yf <- factor(x=y, levels=unique(as.character(y)))
+    ylev <- levels(yf)
+    ynlev <- nlevels(yf)
+
     if ((ynlev == 0) || (ynlev == n)) {
       
       fold <- regularcv(n=n, K=K)

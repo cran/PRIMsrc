@@ -122,6 +122,7 @@ sbh <- function(X,
     if (is.null(groups)) {
       stop("Argument `groups` must be specified when used with PRGSP algorithm. Exiting ... \n\n")
     }
+    groups <- factor(x=groups, levels=unique(as.character(groups)))
     if (!is.null(groups) && (length(levels(groups)) != 2)) {
       stop("Argument `groups` must have exactly two levels when used with PRGSP algorithm. Exiting ... \n\n")
     }
@@ -1034,9 +1035,11 @@ plot.sbh <- function(x,
       y <- object$y
       x <- object$X[,varnames[toplot],drop=FALSE]
       x.names <- colnames(x)
-      plot(x=x, main=NULL, xlab=x.names[1], ylab=x.names[2], type="n")
+      plot(x=x, main=NULL, xlab=x.names[1], ylab=x.names[2], type="n", axes=FALSE, asp=1, frame.plot=FALSE)
+      axis(side=1, at=pretty(range(x[,1])), col=1, col.axis=1, cex.axis=1, line=0)
+      axis(side=2, at=pretty(range(x[,2])), col=1, col.axis=1, cex.axis=1, line=-3)
       if (peelcriterion == "grp") {
-        groups <- object$groups
+        groups <- factor(x=object$groups, levels=unique(as.character(object$groups)))
         groups.lev <- levels(groups)
         groups.ng <- nlevels(groups)
         groups.def <- vector(mode="list", length=groups.ng)
@@ -1084,12 +1087,12 @@ plot.sbh <- function(x,
                border=col.box, col=NA, lty=lty.box, lwd=lwd.box)
         }
       }
-      legend(x="top", inset=-0.18, legend=c("outbox","inbox"), cex=cex, pch=pch, col=col, xpd=TRUE)
       if (add.caption.box) {
+        legend(x="top", inset=-0.18, legend=c("outbox","inbox"), cex=cex, pch=pch, col=col, xpd=TRUE)
         legend(x="top", inset=-0.08, legend=text.caption.box, cex=cex, col=col.box, lty=lty.box, lwd=lwd.box, xpd=TRUE)
       }
       if (add.caption.group) {
-        legend(x="right", inset=-0.06, legend=text.caption.group, cex=cex, pch=pch.group, pt.cex=cex.group, col=col.group, xpd=TRUE)
+        legend(x="right", inset=0, legend=text.caption.group, cex=cex, pch=pch.group, pt.cex=cex.group, col=col.group, xpd=TRUE)
       }
       if (!is.null(main)) {
         mtext(text=main, cex=1, side=3, outer=TRUE)
@@ -2029,7 +2032,7 @@ plot_km <- function(object,
       y <- object$y
       delta <- object$delta
       if (peelcriterion == "grp") {
-        groups <- object$groups
+        groups <- factor(x=object$groups, levels=unique(as.character(object$groups)))
         groups.lev <- levels(groups)
         groups.ng <- nlevels(groups)
         groups.def <- vector(mode="list", length=groups.ng)
