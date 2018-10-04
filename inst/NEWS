@@ -47,7 +47,8 @@ o RELEASE 0.6.0
 - The value of `object$cvfit$cv.trace` of the `PRSP` object that is returned 
   by the main function `sbh()` now only contains the vector of the modal trace values 
   of covariate usage at each step.
-- Updated S3-generic `print()` function as well as `plot_boxtraj()` and `plot_boxtrace()` accordingly.  
+- Updated S3-generic `print()` function as well as `plot_boxtraj()` and `plot_boxtrace()` 
+  accordingly.  
 - Minor updates and corrections in the documentation file and manual.
 - Built and tested under R-devel (2015-09-14 r69384) and release update to GitHub.
 ---------------------------------------------------------------------------------
@@ -59,8 +60,8 @@ o RELEASE 0.6.2
   user-specified significant decimals.
 - Added examples for all S3-generic functions.
 - Corrected output of decision rules in S3-generic `print` function in case `vs=TRUE`. 
-- Renamed results `varsign`, `selected` and `used` to `CV.sign`, `CV.selected` and `CV.used` and
-  moved them to `cvfit` field of return `PRSP` object.
+- Renamed results `varsign`, `selected` and `used` as `CV.sign`, `CV.selected` and 
+  `CV.used`, respectively. Moved them to `cvfit` field of return `PRSP` object.
 - Minor improvement in output plot axes names of `plot_boxtrace()` function.  
 - Updates of corresponding modifications in the documentation file and manual.
 - Built and tested under R-devel (2015-09-14 r69384) and release update to GitHub.
@@ -109,10 +110,11 @@ SIGNIFICANT USER-VISIBLE CHANGES
 - Changed format and values of argument `conf` for setting up the parallel backend in case a parallel 
   cluster of computers is desired. 
 NEW FEATURES
-- Implemented four variable screening (pre-selection) procedures before variable usage (selection) procedure is done. 
-  User can now choose between: 
+- Implemented four variable screening (pre-selection) procedures before variable usage (selection) 
+  procedure is done. User can now choose between: 
   1. PRSP: Univariate Patient Recursive Survival Peeling (PRSP) algorithm
-  2. PCQR: Penalized Censored Quantile Regression by Semismooth Newton Coordinate Descent algorithm adapted from package "hqreg"
+  2. PCQR: Penalized Censored Quantile Regression by Semismooth Newton Coordinate Descent algorithm 
+     adapted from package "hqreg"
   3. PPL: Penalized Partial Likelihood adapted from package "glmnet" (default)
   4. SPCA: Supervised Principal Component Analysis adapted from package "superpc"
 - New `sbh()` output values in `object$cvprofiles` of the 'sbh' object (in matrix format) to plot 
@@ -121,8 +123,8 @@ NEW FEATURES
 BUG FIXES
 - Improved treatment of no variable pre-selection.
 - Removed extraneous codes in main function `sbh()`.
-- Corrected rare error in the determination of cross-validated parameter tuning in `cv.ppl()` and `cv.pcqr()` 
-  for variable selection procedures 2 and 3 above, respectively.
+- Corrected rare exception in the determination of cross-validated tuning parameter in `cv.ppl()` 
+  and `cv.pcqr()` for variable selection procedures 2 and 3 above, respectively.
 - Corrected discrepancy in a given step between `object$cvfit$cv.boxind` and `object$cvfit$cv.stats`. 
 - Corrected internal function `cv.folds()` to handle degenerate cases of cross-validation and the case 
   when an outcome `y` is not provided (in which case a regular random splitting is performed that is not 
@@ -138,6 +140,8 @@ DEPRECATED AND DEFUNCT
   and `cvcriterion` options.
 - Parallel cluster or communication mechanism now only allows type 'Socket' or 
   'Message-Passing Interface' ('MPI'). "PRIMsrc" no longer supports 'Parallel Virtual Machine' ('PVM').
+KNOWN BUGS
+- None at this time.
 PACKAGE INSTALLATION
 - Corrections and updates in manual and documentation files (Rd files).
 - Updates in documentation files (DESCRIPTION, NEWS, CITATION and README).
@@ -161,8 +165,8 @@ o RELEASE 0.7.2
 BUG FIXES
 - Corrected return value of the 1-SE optimal value in cross-validated variable screening subroutines 
   in case the cross-validation could fail.
-- Corrected return values of screened variables (with directions of directed peeling) in case the cross-validation 
-  could fail.
+- Corrected return values of screened variables (with directions of directed peeling) in case the 
+  cross-validation could fail.
 PACKAGE INSTALLATION
 - Corrections and updates in manual and documentation files (Rd files).
 - Updates in documentation files (DESCRIPTION, NEWS and README).
@@ -172,12 +176,12 @@ Date   : 2017-08-07
 o RELEASE 0.7.3
 SIGNIFICANT USER-VISIBLE CHANGES
 - Changed default values and behavior of parameters 'S' and 'L' in the PRSP variable screening procedure 
-  and PRSP algorithm itself, that are used for the cross-validation of the optimal model size (cardinal of 
-  subset of top-screened variables) and the optimal number of peeling steps (optimal peeling sequence length). 
-  See manual.
+  and PRSP algorithm itself, that are used for the cross-validation of the optimal model size (cardinal 
+  of subset of top-screened variables) and the optimal number of peeling steps (optimal peeling sequence 
+  length). See manual.
 BUG FIXES
-- Updated S3-generic `plot()` function. The scatterplot is now drawn only if the number of used covariates 
-  of the 'sbh' object is greater than two.
+- Updated S3-generic `plot()` function. The scatterplot is now plotted only if exactly two dimensions are 
+  specified, i.e. two of the `used` (selected) covariates of the 'sbh' object are specified.
 PACKAGE INSTALLATION
 - Corrections and clarifications in manual and documentation files (Rd files).
 - Updates in documentation files (DESCRIPTION, NEWS and README).
@@ -188,9 +192,9 @@ o RELEASE 0.7.4
 SIGNIFICANT USER-VISIBLE CHANGES
 - Simplified user experience by removing the PRSP parameter `minn` that was redundant with `beta`.
 - Simplified user experience by removing the PRSP parameter `L` used in the PRSP variable screening 
-  procedure and for fitting the Survival Bump Hunting (SBH) model itself that was redundant with the automatic 
-  cross-validation option. The optimal number of peeling steps (optimal peeling sequence length) is 
-  now determined systematically by cross-validation. See manual.
+  procedure and for fitting the Survival Bump Hunting (SBH) model itself that was redundant with the 
+  automatic cross-validation option. The optimal number of peeling steps (optimal peeling sequence 
+  length) is now determined systematically by cross-validation. See manual.
 - Changed name and default value of parameter 'S' in the PRSP variable screening procedure to 'msize' 
   and NULL, respectively. See manual.
 UTILITIES
@@ -218,17 +222,21 @@ Date   : 2018-08-25
 o RELEASE 0.8.0
 BUG FIXES
 - Removed extraneous condition for stopping rule in internal function `prsp()`.
-- The scatterplot can now be drawn if the number of used covariates of the 'sbh' object 
-  is only one. In this case, the scatterplot will be drawn with one of the two specified 
-  dimensions.
+- S3-generic `plot()` function can now be plotted if only one dimension is specified, i.e. only
+  one of the `used` (selected) covariates of the 'sbh' object is specified. In this case, 
+  the scatterplot will be plotted using the `used` (selected) covariate and an arbitrary 
+  dimension, both specified by the user.
 - Minor typos corrections and URLs updates.
+NEW FEATURES
+- Added new peeling criterion `grp` that stands for "group" to carry out a modified 
+  version of Survival Bump Hunting (SBH), called Group Survival Bump Hunting (GSBH) 
+  using our PRGSP algorithm, derived from our original Patient Recursive Survival Peeling (PRSP).
 SIGNIFICANT USER-VISIBLE CHANGES
-- Added new peeling criterion `grp` that stands for "group" to carry out a modified version of 
-  Survival Bump Hunting (SBH), called Group Survival Bump Hunting (GSBH) using our 
-  PRGSP algorithm, derived from our original Patient Recursive Survival Peeling (PRSP).
 - Modifications of options in plot functions accordingly.
 - Renamed plot functions `plot_boxtraj()`, `plot_boxtrace()`, and `plot_boxkm()` to 
   `plot_traj()`, `plot_trace()`, and `plot_km()` respectively.
+KNOWN BUGS
+- None at this time.
 PACKAGE INSTALLATION
 - Updates in manual and documentation files (Rd files).
 - Updates in documentation files (DESCRIPTION, NEWS, CITATION, and README).
@@ -241,6 +249,42 @@ BUG FIXES
   different from a factor. Argument `group` now correctly handles the case of a numeric 
   or character vector as well as a factor.
 PACKAGE INSTALLATION
+- Minor updates in manual and documentation files (Rd files).
+- Minor updates in documentation files (DESCRIPTION, NEWS, and README).
+- Built and tested under R version 3.5.1 (2018-07-02) and release update to GitHub.
+---------------------------------------------------------------------------------
+Date   : 2018-10-04
+o RELEASE 0.8.2
+BUG FIXES
+- Fixed errors (release >= 0.8.0) of group membership indicator variable (`group`) in 
+  S3-generic `plot()` and `plot_km()` functions.
+- The main function `sbh()` now handles a rare exception of no steps in the peeling sequence
+  of the PRGSP or PRSP algorithm.
+- Corrected rare exception (release >= 0.7.0) in the determination of cross-validated tuning parameter 
+  in `cv.ppl()` and `cv.pcqr()` for variable selection procedures 2 and 3 described above, respectively.
+- Updated S3-generic `plot()` function. The scatterplot now correctly plots all possible 
+  values of argument `proj` of the specified dimensions.
+- The peeling profiles are now returned, and can be plotted, even when the option `cv` in main 
+  function `sbh()` for optional cross-validation is tuned off.
+SIGNIFICANT USER-VISIBLE CHANGES
+- Changed default value of metaparameter `beta` to 0.10 (instead of 0.05).
+- Added argument `asp` to S3-generic `plot()` function for proportional display option.
+- Added argument `ci` to `plot_km()` function for confidence interval display option.
+- Moved user option `vscons` for variable screening (pre-selection) conservativeness from 
+  parameter `vsarg` to main function `sbh()` .
+UTILITIES
+- The S3-generic `predict()` function now allows the `newdata` to be of greater dimensionality than
+  the input data `X`. It also returns additional values.
+- User can now use any of the three cross-validation criterion when runing a Group Survival 
+  Bump Hunting (GSBH) using our PRGSP algorithm.
+- The cross-validation criterion now uses the log-rank test p-values to put an upper bound
+  on the number of peeling steps and prevent risks of over-fitting. The optimal peeling length 
+  is now the maximum step that maximizes or minimizes the usual cross-validation criterions 
+  LHR, LRT, or CER, respectively, AND for which the log-rank test p-value is significant at the 
+  0.05 level. 
+PACKAGE INSTALLATION
+- Clarification about a possible apparent disconcordance in the way box estimates are reported. 
+  See details section in manual of main function `sbh()`.
 - Minor updates in manual and documentation files (Rd files).
 - Minor updates in documentation files (DESCRIPTION, NEWS, and README).
 - Built and tested under R version 3.5.1 (2018-07-02) and release update to GitHub.

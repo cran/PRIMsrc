@@ -24,12 +24,12 @@
       vstype = "ppl",
       vsarg = "alpha=1,
                nalpha=1,
-               nlambda=100,
-               vscons=0.5",
+               nlambda=100",
+      vscons = 0.5,
       cv = TRUE, 
       cvtype = "combined", 
       cvarg = "alpha=0.01,
-               beta=0.05,
+               beta=0.10,
                peelcriterion=\"lrt\",
                cvcriterion=\"cer\"",
       groups = NULL,
@@ -90,7 +90,7 @@
     \item{vsarg}{
         \code{Character} \code{vector} of parameters of the cross-validated variable screening (pre-selection) procedure. 
         Defaults to parameters values of default variable screening (pre-selection) procedure "ppl": 
-        \code{vsarg="alpha=1,nalpha=1,nlambda=100,vscons=0.5"}. Note that \code{vsarg} comes as a character string between 
+        \code{vsarg="alpha=1,nalpha=1,nlambda=100"}. Note that \code{vsarg} comes as a character string between 
         double quotes, with comas separated values, and without white spaces. All the following parameters are ignored 
         if \code{vs} is \code{FALSE}.\cr
         PRSP: 
@@ -98,23 +98,20 @@
             \item{\code{alpha}} = \code{numeric} data quantile in (0,1) to peel off at each step of the peeling 
                 sequence of the PRSP algorithm. Suggests 0.01.
             \item{\code{beta}} = \code{numeric} scalar of minimum box support at the end of the peeling sequence. 
-                Suggests 0.05.
+                Suggests 0.10.
             \item{\code{msize}} = positive \code{integer} or \code{NULL} to control the model size, i.e the number of 
                 screened variables used for fitting the Survival Bump Hunting model. Use a single non-\code{NULL} value
                 as the maximum model size (cardinal of subset of top-screened variables) within the allowable range 
                 [1,\code{floor}(\eqn{p})]. Alternatively, use \code{msize=NULL} to allow the optimal model size to be 
                 determined by cross-validation. See below for details. Suggests \code{NULL}.
-            \item{\code{peelcriterion}} in \{"lhr", "lrt", "chs", "grp"\} peeling criterion Log-Hazard Ratio (LHR), 
-                Log-Rank Test (LRT), or Cumulative Hazard Summary (CHS), of Group (GRP), respectively, that is used 
+            \item{\code{peelcriterion}} in \{"lhr", "lrt", "chs", "grp"\} stands for the peeling criterion Log-Hazard Ratio (LHR), 
+                Log-Rank Test (LRT), Cumulative Hazard Summary (CHS), or Group (GRP), respectively, that is used 
                 in the PRSP algorithm (LHR, LRT, CHS) or the PRGSP algorithm (GRP). 
                 Suggests "lrt".
             \item{\code{cvcriterion}} in \{"lhr", "lrt", "cer"\} stands for the cross-validation criterion Log-Hazard Ratio (LHR),
                 Log-Rank Test (LRT), or Concordance Error Rate (CER), respectively, that is used for optimizing the 
                 model size (cardinal of subset of top-screened variables) and the optimal number of peeling steps 
                 (optimal peeling sequence length) in the PRSP variable screening procedure. Suggests "cer".
-            \item{\code{vscons}} = \code{numeric} scalar in [1/\code{K}, 1], specifying the conservativeness of 
-                the variable screening (pre-selection) procedure, where 1/\code{K} is the least conservative 
-                and 1 is the most. Suggests 0.5.
         }
         PCQR: 
         \itemize{
@@ -132,9 +129,6 @@
                  Suggests 1 (see above: lasso).
             \item{\code{nlambda}} = positive \code{integer} of number of elasticnet penalization \code{lambda} values 
                 to consider in the grid search. Suggests 100.
-            \item{\code{vscons}} = \code{numeric} scalar in [1/\code{K}, 1], specifying the conservativeness of 
-                the variable screening (pre-selection) procedure, where 1/\code{K} is the least conservative 
-                and 1 is the most. Suggests 0.5.
         }
         PPL: 
         \itemize{
@@ -148,9 +142,6 @@
                  Suggests 1 (see above: lasso).
             \item{\code{nlambda}} = positive \code{integer} of number of elasticnet penalization \code{lambda} values 
                 to consider in the grid search. Suggests 100.
-            \item{\code{vscons}} = \code{numeric} scalar in [1/\code{K}, 1], specifying the conservativeness of 
-                the variable screening (pre-selection) procedure, where 1/\code{K} is the least conservative 
-                and 1 is the most. Suggests 0.5.
         }
         SPCA: 
         \itemize{
@@ -162,20 +153,16 @@
             \item{\code{n.var}} = minimum number of variables to include in determining range for threshold. 
                 If cannot be more than \eqn{p} (dimensionality), and will be reset to \code{n.var} = \eqn{p} - 1 
                 otherwise. Suggests 5.
-            \item{\code{vscons}} = \code{numeric} scalar in [1/\code{K}, 1], specifying the conservativeness of 
-                the variable screening (pre-selection) procedure, where 1/\code{K} is the least conservative 
-                and 1 is the most. Suggests 0.5.
         }
+    }
+    \item{vscons}{
+        \code{numeric} scalar in [1/\code{K}, 1], specifying the conservativeness of the variable screening (pre-selection) 
+        procedure, where 1/\code{K} is the least conservative and 1 is the most. Suggests 0.5 
     }
     \item{cv}{
         \code{logical} scalar. Flag for optional cross-validation (CV) of variable screening (pre-selection) 
-        parameters and Survival Bump Hunting fitting by PRSP algorithm. Defaults to \code{TRUE}. If \code{TRUE},
-        the optimal number of peeling steps (optimal peeling sequence length) and the optimal model size (cardinal 
-        of subset of top-screened variables) will be determined by cross-validation. See below for details. 
-        If \code{FALSE}, no cross-validation at will be performed, the value of \code{K} will be overwritten to 1, 
-        and traditional log-rank Mantel-Haenszel \eqn{p}-values will be computed (using the Chi-Squared distribution 
-        with 1 df for the null distribution) instead of log-rank permutation \eqn{p}-values (using the permutation 
-        distribution for the null distribution).
+        parameters and Survival Bump Hunting fitting by PRSP algorithm. See below for details. 
+        Defaults to \code{TRUE}.
     }
     \item{cvtype}{
         \code{character} \code{vector} in \{"combined", "averaged"\} specifying the cross-validation technique.
@@ -184,24 +171,23 @@
     \item{cvarg}{
         \code{character} \code{vector} describing the parameters used in the PRSP algorithm for fitting the 
         Survival Bump Hunting model. Defaults to: \cr 
-        \code{cvarg="alpha=0.01,beta=0.05,peelcriterion=\"lrt\",cvcriterion=\"cer\""}. 
+        \code{cvarg="alpha=0.01,beta=0.10,peelcriterion=\"lrt\",cvcriterion=\"cer\""}. 
         Note that \code{cvarg} comes as a character string between double quotes, with comas separated values, and 
         without white spaces.
         \itemize{ 
             \item{\code{alpha}} = \code{numeric} data quantile in (0,1) to peel off at each step of the peeling
                 sequence of the PRSP algorithm. Defaults to 0.01.
             \item{\code{beta}} = \code{numeric} scalar of minimum box support at the end of the peeling sequence. 
-                Defaults to 0.05.
-            \item{\code{peelcriterion}} in \{"lhr", "lrt", "chs", "grp"\} stands for the peeling criterion: Log-Hazard Ratio (LHR), 
-                Log-Rank Test (LRT), Cumulative Hazard Summary (CHS), or Group (GRP), respectively, 
+                Defaults to 0.10.
+            \item{\code{peelcriterion}} in \{"lhr", "lrt", "chs", "grp"\} stands for the peeling criterion 
+                Log-Hazard Ratio (LHR), Log-Rank Test (LRT), Cumulative Hazard Summary (CHS), or Group (GRP), respectively, 
                 that is used in the PRSP or PRGSP algorithm. 
                 Defaults to "lrt".
-            \item{\code{cvcriterion}} in \{"lhr", "lrt", "cer"\} stands for the cross-validation criterion Log-Hazard Ratio (LHR),
-                Log-Rank Test (LRT), or Concordance Error Rate (CER), respectively, that is used for tuning/optimizing 
-                the optimal number of peeling steps (i.e. optimal peeling sequence length) in the PRSP algorithm. 
-                Defaults to "cer". Ignored if \code{cv} is \code{FALSE}.
+            \item{\code{cvcriterion}} in \{"lhr", "lrt", "cer"\} stands for the cross-validation criterion 
+                Log-Hazard Ratio (LHR), Log-Rank Test (LRT), or Concordance Error Rate (CER), respectively, 
+                that is used for tuning/optimizing the optimal number of peeling steps (i.e. optimal peeling sequence length) 
+                in the PRSP algorithm. Defaults to "cer". Ignored if \code{cv} is \code{FALSE}.
         } 
-        If \code{peelcriterion = "grp"}, \code{cvcriterion} is automatically set to "cer", and 
         if \code{peelcriterion} is in \{"lhr", "lrt", "chs"\}, \code{groups} is automatically set to \code{NULL}.
     }
     \item{groups}{
@@ -209,7 +195,7 @@
         the data sample size with as many different values or \code{levels} as the number of data sample groups. 
         To be specified if algorithm Patient Recursive Group Survival Peeling (PRGSP) is to be used, i.e. with option 
         \code{peelcriterion = "grp"}. Only two groups are allowed at this point.
-        Defaults to \code{NULL}, i.e. when regular PRSP is to be used (\code{peelcriterion} in \{"lhr", "lrt", "chs"\}).
+        Defaults to \code{NULL}, i.e. when regular PRSP is to be used.
     }
     \item{pv}{
         \code{logical} scalar. Flag for computation of log-rank \eqn{p}-values. 
@@ -277,7 +263,8 @@
     \code{NA} missing values are not allowed in \pkg{PRIMsrc}, because it depends on R package \pkg{glmnet}, which doesn't handle 
     missing values. In case of high-dimensional data (\eqn{p >> n}), the recommendation is to use PPL or SPCA because of computational 
     efficiency. Variable screening (pre-selection) is done by computing occurrence frequencies of top-ranking variables over the 
-    cross-validation folds and replicates. The conservativeness of the procedure is controled by the argument \code{vscons}. 
+    cross-validation folds and replicates. The conservativeness of the procedure is controled by the argument \code{vscons}.
+    
     Example of \code{vscons} values for pre-selection are as follows:
     \itemize{
         \item{`1.0` represents a presence in all the folds (unanimity vote)}
@@ -289,17 +276,24 @@
     itself using our PRSP algorithm on previously screened variables by collecting those variables that have the maximum occurrence 
     frequency in each peeling step over cross-validation folds and replicates.
     
-    The argument \code{groups} is to be specified if our Patient Recursive Group Survival Peeling (PRGSP) algorithm is used. 
+    If cross-validation is done (\code{cv = TRUE}, the optimal number of peeling steps (optimal peeling sequence length), 
+    and the optimal model size (cardinal of subset of top-screened variables) will be determined by cross-validation. 
+    If \code{cv = FALSE}, no cross-validation at all will be performed, and the values of \code{K} and \code{vscons} will both
+    be reset to 1, and traditional log-rank Mantel-Haenszel \eqn{p}-values will be computed (using the Chi-Squared 
+    distribution with 1 df for the null distribution) instead of log-rank permutation \eqn{p}-values (using the permutation 
+    distribution for the null distribution).
+        
+    The argument \code{groups} is to be specified if the Patient Recursive Group Survival Peeling (PRGSP) algorithm is used. 
     The PRGSP algorithm is a derivation of our original Patient Recursive Survival Peeling (PRSP) algorithm (Dazard et al. 2016) 
     to search for (or find an extreme of) outcome difference within existing (fixed) groups of observations. See Rao et al. (2018) 
     for details and an application in Disparity Subtyping.
     
     In the PRSP variable screening procedure (\code{vsarg} of "prsp"), setting option \code{msize} to a single non-\code{NULL} value 
     within the allowable range [1,\code{floor}(\eqn{p})] will override the cross-validation setting within the variable screening
-    procedure, but will also reduce computational burden. This could be recommended for high-dimensional data (\eqn{p >> n}), 
-    where we suggest an arbitrary value of \code{msize} within [1, \code{floor}(\eqn{p}/5)]. Conversely, setting \code{msize=NULL} 
+    procedure. This could be recommended for high-dimensional data (\eqn{p >> n}) to reduce the computational burden. In this situation, 
+    we suggest an arbitrary value of \code{msize} within [1, \code{floor}(\eqn{p}/5)]. Conversely, setting \code{msize=NULL} 
     will force the cross-validation within the variable screening procedure by automaticaly generating a vector of model sizes 
-    (cardinals of subset of top-screened variables) within the restricted range [1, \code{floor}(\eqn{p}/5)] that will be used to 
+    (cardinals of subset of top-screened variables) within the restricted range [1, \code{floor}(\eqn{p}/5)], which will be used to 
     determine the optimal value of model size.
     
     In fitting the Survival Bump Hunting (SBH) model itself, note that the result contains initial step #0, which corresponds 
@@ -329,15 +323,19 @@
     In case replicated cross-validations are performed, a "summary report" of the outputs is done over the \code{B} replicates as follows:
     \itemize{
         \item Even thought the PRSP algorithm uses only one covariate at a time at each peeling step, the reported matrix of 
-              "Replicated CV" box decision rules may show more than one covariate being used in a given step, because these decision rules 
-              are averaged over the \code{B} replicates (see equation #21 in Dazard et al. 2016).
-        \item However, the reported "Replicated CV" trace values are computed (at each peeling step) as a \emph{single} modal trace value of 
-              covariate usage over the \code{B} replicates. This is also reflected in the reported "Replicated CV" importance and usage plots 
-              of covariate traces.
-        \item The reported "Replicated CV" box membership indicators are computed (at each peeling step) as the point-wise majority vote over 
-              the \code{B} replicates (right-hand side of equation #22 in Dazard et al. 2016).
-        \item The reported "Replicated CV" box support vector and corresponding box sample size are computed (at each peeling step) based on 
-              the above "Replicated CV" box membership indicators (i.e. \emph{not} as equation #23 in Dazard et al. 2016).
+              "Replicated CV" box decision rules may show more than one covariate being used in a given step depending on the replication. 
+              In the end, the reported "Replicated CV" trace values are computed (at each peeling step) as a \emph{single} modal trace value 
+              of covariate usage over the \code{B} replicates. This is also reflected in the "Replicated CV" importance and usage plots of 
+              covariate traces.
+        \item Similarly, the reported "Replicated CV" box membership indicators are computed (at each peeling step) as the point-wise modal
+              membership value, that is majority vote, over the \code{B} replicates (right-hand side of equation #22 in Dazard et al. 2016). 
+              The reported "Replicated CV" box support and corresponding box sample size are computed (at each peeling step) based on the 
+              above "Replicated CV" box membership indicators (i.e. \emph{not} as equation #23 in Dazard et al. 2016).
+        \item All other reported "Replicated CV" box estimates are computed (at each peeling step) as average statistics over the \code{B} 
+              replicates (i.e. as equation #21 in Dazard et al. 2016), that is, \emph{not} as a single box estimate computed from the 
+              "Replicated CV" box membership indicators. This includes the decision rules, the p-values, and all other box statistics. 
+              This may result in some apparent discordance if these estimates are re-computed directly from the reported "Replicated CV" 
+              box membership indicators.
     }
     
     If the computation of log-rank \eqn{p}-values is desired, then running with the parallelization option is strongly advised. 
@@ -379,7 +377,7 @@
 
 \value{
     Object of \code{class} \code{sbh} (Patient Recursive Survival Peeling)
-    \code{list} containing the following 22 fields:
+    \code{list} containing the following 23 fields:
     \item{X}{\code{numeric} \code{matrix} of original dataset.}
     \item{y}{\code{numeric} \code{vector} of observed failure / survival times.}
     \item{delta}{\code{numeric} \code{vector} of observed event indicator in \{1,0\}.}
@@ -389,6 +387,7 @@
     \item{vs}{\code{logical} scalar of returned flag of optional variable pre-selection.}
     \item{vstype}{\code{character} \code{vector} of the optional variable pre-selection procdure used.}
     \item{vsarg}{\code{list} of parameters used in the pre-selection procedure.}
+    \item{vscons}{\code{numeric} scalar of conservativeness of the variable screening (pre-selection) procedure.}
     \item{cv}{\code{logical} scalar of returned flag of optional cross-validation.}
     \item{cvtype}{\code{character} \code{vector} of the cross-validation technique used.}
     \item{cvarg}{\code{list} of parameters used in the Survival Bump Hunting procedure.}
@@ -563,7 +562,7 @@ synt1 <- sbh(X = Synthetic.1[ , -c(1,2), drop=FALSE],
              cv = TRUE,
              cvtype = "combined",
              cvarg = "alpha=0.10,
-                      beta=0.05,
+                      beta=0.10,
                       peelcriterion=\"lrt\",
                       cvcriterion=\"lrt\"",
              groups = NULL,
@@ -628,6 +627,7 @@ plot_trace(object = synt1,
 plot_km(object = synt1,
         main = paste("Cross-validated probability curves for model #1", sep=""),
         xlab = "Time", ylab = "Probability",
+        ci = TRUE,
         steps = 1:synt1$cvfit$cv.nsteps,
         col = c(1,2), lty = 1, lwd = 0.5, cex = 0.5,
         add.caption = TRUE,
@@ -639,7 +639,7 @@ plot_km(object = synt1,
     # Examples of parallel backend parametrization 
     #===================================================
     if (require("parallel")) {
-       print("'parallel' is attached correctly \n")
+       cat("'parallel' is attached correctly \n")
     } else {
        stop("'parallel' must be attached first \n")
     }
@@ -676,10 +676,10 @@ plot_km(object = synt1,
     # Ex. #3 - Enterprise Multinode Cluster w/ multicore/node  
     # Running LINUX with SLURM scheduler
     # MPI communication cluster
-    # Distributed memory parallelisation
+    # Distributed memory parallelization
     #==================================================
     if (require("Rmpi")) {
-        print("'Rmpi' is attached correctly \n")
+        cat("'Rmpi' is attached correctly \n")
     } else {
         stop("'Rmpi' must be attached first \n")
     }
@@ -712,12 +712,12 @@ plot_km(object = synt1,
                  vstype = "ppl",
                  vsarg = "alpha=1,
                           nalpha=1,
-                          nlambda=100,
-                          vscons=0.5",
+                          nlambda=100",
+                 vscons = 0.5,
                  cv = TRUE,
                  cvtype = "combined",
                  cvarg = "alpha=0.01,
-                          beta=0.05,
+                          beta=0.10,
                           peelcriterion=\"lrt\",
                           cvcriterion=\"lrt\"",
                  groups = NULL,
@@ -731,8 +731,7 @@ plot_km(object = synt1,
                  parallel.pv = TRUE,
                  conf = conf,
                  verbose = TRUE,
-                 seed = 123)
-                 
+                 seed = 123)      
     #===================================================
     # Simulated dataset #4 (n=100, p=1000)
     # Peeling criterion = LRT
@@ -752,15 +751,15 @@ plot_km(object = synt1,
                  vs = TRUE,
                  vstype = "prsp",
                  vsarg = "alpha=0.01,
-                          beta=0.05,
+                          beta=0.10,
                           msize=NULL,
                           peelcriterion=\"lrt\",
                           cvcriterion=\"cer\"",
-                          vscons=0.5",
+                 vscons = 0.5,
                  cv = TRUE,
                  cvtype = "combined",
                  cvarg = "alpha=0.01,
-                          beta=0.05,
+                          beta=0.10,
                           peelcriterion=\"lrt\",
                           cvcriterion=\"cer\"",
                  groups = NULL,
